@@ -2,11 +2,8 @@ import serializeJavascript from 'serialize-javascript';
 import type * as Stuntman from '@stuntman/shared';
 import { logger } from '@stuntman/shared';
 import { validateSerializedRuleProperties } from './validatiors';
-import fs from 'fs';
 
 // TODO
-export const INDEX_DTS = fs.readFileSync(`${__dirname}/../../types${/\.js$/.test(__filename) ? '.d' : ''}.ts`, 'utf-8');
-
 export const deserializeRule = (serializedRule: Stuntman.SerializedRule): Stuntman.Rule => {
     logger.debug(serializedRule, 'attempt to deserialize rule');
     validateSerializedRuleProperties(serializedRule);

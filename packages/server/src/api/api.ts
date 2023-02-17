@@ -1,36 +1,28 @@
 import http from 'http';
 import express, { NextFunction, Request, Response, Express as ExpressServer } from 'express';
-import defaults from 'defaults';
 import { v4 as uuidv4 } from 'uuid';
 import { getTrafficStore } from '../storage';
 import { ruleExecutor } from '../ruleExecutor';
-import { logger, AppError, HttpCode, DEFAULT_API_PORT, MAX_RULE_TTL_SECONDS, stringify } from '@stuntman/shared';
+import { logger, AppError, HttpCode, MAX_RULE_TTL_SECONDS, stringify, INDEX_DTS } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
 import RequestContext from '../requestContext';
 import serializeJavascript from 'serialize-javascript';
 import LRUCache from 'lru-cache';
 import { validateDeserializedRule } from './validatiors';
-import { INDEX_DTS, deserializeRule, escapedSerialize, liveRuleToRule } from './utils';
+import { deserializeRule, escapedSerialize, liveRuleToRule } from './utils';
 
-type APIOptions = {
+type ApiOptions = Stuntman.ApiConfig & {
     mockUuid: string;
-    port?: number;
-    disableWebGUI?: boolean;
-};
-
-const DEFAULT_API_OPTIONS = {
-    port: DEFAULT_API_PORT,
-    disableWebGUI: false,
 };
 
 export class API {
-    protected options: Required<APIOptions>;
+    protected options: Required<ApiOptions>;
     protected apiApp: ExpressServer;
     trafficStore: LRUCache<string, Stuntman.LogEntry>;
     server: http.Server | null = null;
 
-    constructor(options: APIOptions) {
-        this.options = defaults(options, DEFAULT_API_OPTIONS);
+    constructor(options: ApiOptions, webGuiOptions?: Stuntman.WebGuiConfig) {
+        this.options = options;
 
         this.trafficStore = getTrafficStore(this.options.mockUuid);
         this.apiApp = express();
@@ -117,7 +109,7 @@ export class API {
         this.apiApp.set('views', __dirname + '/webgui');
         this.apiApp.set('view engine', 'pug');
 
-        if (!this.options.disableWebGUI) {
+        if (!webGuiOptions?.disabled) {
             this.initWebGui();
         }
     }

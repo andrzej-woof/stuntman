@@ -1,11 +1,10 @@
 import http from 'http';
 import https from 'https';
 import express from 'express';
-import defaults from 'defaults';
 import { v4 as uuidv4 } from 'uuid';
 import { ruleExecutor } from './ruleExecutor';
 import { getTrafficStore } from './storage';
-import { DEFAULT_MOCK_DOMAIN, DEFAULT_MOCK_PORT, DEFAULT_PROXY_TIMEOUT, RawHeaders, logger, HttpCode } from '@stuntman/shared';
+import { RawHeaders, logger, HttpCode } from '@stuntman/shared';
 import RequestContext from './requestContext';
 import type * as Stuntman from '@stuntman/shared';
 import { IPUtils } from './ipUtils';
@@ -14,27 +13,6 @@ import { API } from './api/api';
 
 type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
     [Property in Key]-?: Type[Property];
-};
-
-type MockOptions = {
-    domain?: string;
-    port?: number;
-    httpsPort?: number;
-    httpsKey?: string;
-    httpsCert?: string;
-    proxyTimeout?: number;
-    externalDns?: boolean | [string, ...string[]];
-    apiPort?: number;
-    disableAPI?: boolean;
-    disableWebGUI?: boolean;
-    trafficLimitCount?: number;
-    trafficLimitSize: number;
-};
-
-const DEFAULT_MOCK_OPTIONS = {
-    domain: DEFAULT_MOCK_DOMAIN,
-    port: DEFAULT_MOCK_PORT,
-    proxyTimeout: DEFAULT_PROXY_TIMEOUT,
 };
 
 const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody | undefined => {
@@ -71,7 +49,7 @@ const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody | undefi
 
 export class Mock {
     protected mockUuid: string;
-    protected options: MockOptions;
+    protected options: Stuntman.ServerConfig;
     protected mockApp: express.Express;
     protected MOCK_DOMAIN_REGEX: RegExp;
     protected URL_PORT_REGEX: RegExp;
@@ -82,43 +60,39 @@ export class Mock {
     private _api: API | null = null;
 
     get apiServer() {
-        if (this.options.disableAPI) {
+        if (this.options.api.disabled) {
             return null;
         }
         if (!this._api) {
-            this._api = new API({ port: this.options.apiPort, mockUuid: this.mockUuid });
+            this._api = new API({ ...this.options.api, mockUuid: this.mockUuid }, this.options.webgui);
         }
         return this._api;
     }
 
-    constructor(options?: MockOptions) {
+    constructor(options: Stuntman.ServerConfig) {
         this.mockUuid = uuidv4();
-        this.options = defaults(options, DEFAULT_MOCK_OPTIONS);
-        if (this.options.httpsPort && (!this.options.httpsKey || !this.options.httpsCert)) {
+        this.options = options;
+        if (this.options.mock.httpsPort && (!this.options.mock.httpsKey || !this.options.mock.httpsCert)) {
             throw new Error('missing https key/cert');
         }
 
         this.MOCK_DOMAIN_REGEX = new RegExp(
-            `(?:\\.([0-9]+))?\\.(?:(?:${this.options.domain})|(?:localhost))(https?)?(:${this.options.port}${
-                this.options.httpsPort ? `|${this.options.httpsPort}` : ''
+            `(?:\\.([0-9]+))?\\.(?:(?:${this.options.mock.domain})|(?:localhost))(https?)?(:${this.options.mock.port}${
+                this.options.mock.httpsPort ? `|${this.options.mock.httpsPort}` : ''
             })?(?:\\b|$)`,
             'i'
         );
         this.URL_PORT_REGEX = new RegExp(
-            `^(https?:\\/\\/[^:/]+):(?:${this.options.port}${this.options.httpsPort ? `|${this.options.httpsPort}` : ''})(\\/.*)`,
+            `^(https?:\\/\\/[^:/]+):(?:${this.options.mock.port}${
+                this.options.mock.httpsPort ? `|${this.options.mock.httpsPort}` : ''
+            })(\\/.*)`,
             'i'
         );
-        this.trafficStore = getTrafficStore(this.mockUuid, {
-            max: this.options.trafficLimitCount,
-            maxSize: this.options.trafficLimitSize,
-        });
-        if (!this.options.externalDns) {
-            this.ipUtils = null;
-        } else if (typeof this.options.externalDns === 'boolean') {
-            this.ipUtils = new IPUtils({ mockUuid: this.mockUuid });
-        } else {
-            this.ipUtils = new IPUtils({ mockUuid: this.mockUuid, externalDns: this.options.externalDns });
-        }
+        this.trafficStore = getTrafficStore(this.mockUuid, this.options.storage.traffic);
+        this.ipUtils =
+            !this.options.mock.externalDns || this.options.mock.externalDns.length === 0
+                ? null
+                : new IPUtils({ mockUuid: this.mockUuid, externalDns: this.options.mock.externalDns });
 
         this.mockApp = express();
         // TODO for now request body is just a buffer passed further, not inflated
@@ -193,7 +167,7 @@ export class Mock {
                 const hostname = originalHostname.split(':')[0];
                 try {
                     const internalIPs = await this.ipUtils.resolveIP(hostname);
-                    if (this.ipUtils.isLocalhostIP(internalIPs)) {
+                    if (this.ipUtils.isLocalhostIP(internalIPs) && this.options.mock.externalDns.length) {
                         const externalIPs = await this.ipUtils.resolveIP(hostname, { useExternalDns: true });
                         logger.debug({ ...logContext, hostname, externalIPs, internalIPs }, 'switched to external IP');
                         mockEntry.modifiedRequest.url = mockEntry.modifiedRequest.url.replace(
@@ -210,9 +184,9 @@ export class Mock {
             let controller: AbortController | null = new AbortController();
             const fetchTimeout = setTimeout(() => {
                 if (controller) {
-                    controller.abort(`timeout after ${this.options.proxyTimeout}`);
+                    controller.abort(`timeout after ${this.options.mock.timeout}`);
                 }
-            }, this.options.proxyTimeout);
+            }, this.options.mock.timeout);
             req.on('close', () => {
                 logger.debug(logContext, 'remote client canceled the request');
                 clearTimeout(fetchTimeout);
@@ -311,22 +285,22 @@ export class Mock {
         if (this.server) {
             throw new Error('mock server already started');
         }
-        if (this.options.httpsPort) {
+        if (this.options.mock.httpsPort) {
             this.serverHttps = https
                 .createServer(
                     {
-                        key: this.options.httpsKey,
-                        cert: this.options.httpsCert,
+                        key: this.options.mock.httpsKey,
+                        cert: this.options.mock.httpsCert,
                     },
                     this.mockApp
                 )
-                .listen(this.options.httpsPort, () => {
-                    logger.info(`Mock listening on ${this.options.domain}:${this.options.httpsPort}`);
+                .listen(this.options.mock.httpsPort, () => {
+                    logger.info(`Mock listening on ${this.options.mock.domain}:${this.options.mock.httpsPort}`);
                 });
         }
-        this.server = this.mockApp.listen(this.options.port, () => {
-            logger.info(`Mock listening on ${this.options.domain}:${this.options.port}`);
-            if (!this.options.disableAPI) {
+        this.server = this.mockApp.listen(this.options.mock.port, () => {
+            logger.info(`Mock listening on ${this.options.mock.domain}:${this.options.mock.port}`);
+            if (!this.options.api.disabled) {
                 this.apiServer?.start();
             }
         });
@@ -336,7 +310,7 @@ export class Mock {
         if (!this.server) {
             throw new Error('mock server not started');
         }
-        if (!this.options.disableAPI) {
+        if (!this.options.api.disabled) {
             this.apiServer?.stop();
         }
         this.server.close((error) => {
@@ -365,7 +339,10 @@ export class Mock {
             req.url = req.url.replace(this.URL_PORT_REGEX, '$1$2');
         }
         const host = req.rawHeaders.get('host') || '';
-        if (host.endsWith(`:${this.options.port}`) || (this.options.httpsPort && host.endsWith(`:${this.options.httpsPort}`))) {
+        if (
+            host.endsWith(`:${this.options.mock.port}`) ||
+            (this.options.mock.httpsPort && host.endsWith(`:${this.options.mock.httpsPort}`))
+        ) {
             req.rawHeaders.set('host', host.split(':')[0]);
         }
     }

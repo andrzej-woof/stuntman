@@ -4,6 +4,10 @@ export * from './appError';
 export * from './logger';
 export * from './stringify';
 export * from './rawHeaders';
+export * from './config';
+
+import fs from 'fs';
+export const INDEX_DTS = fs.readFileSync(`${__dirname}/index.d.ts`, 'utf-8');
 
 type NonObject = string | number | boolean | symbol | undefined | null | any[];
 
@@ -176,18 +180,19 @@ export type MockConfig = {
     httpsKey?: string;
     httpsCert?: string;
     timeout: number;
-    externalDns: boolean | [string, ...string[]];
+    externalDns: string[];
 };
 
 export type StorageConfig = {
     limitCount: number;
     limitSize: number;
+    ttl: number;
 };
 
-export type Config = {
+export type ServerConfig = {
     webgui: WebGuiConfig;
     api: ApiConfig;
-    proxy: MockConfig;
+    mock: MockConfig;
     storage: {
         traffic: StorageConfig;
     };
