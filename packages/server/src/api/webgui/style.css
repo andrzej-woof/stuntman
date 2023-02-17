@@ -1,0 +1,28 @@
+div#container {
+    resize: vertical;
+    overflow: auto;
+}
+
+body {
+    font-family: Menlo, Monaco, 'Courier New', monospace;
+}
+
+button.rule {
+    font-family: Menlo, Monaco, 'Courier New', monospace;
+    background: none !important;
+    border: none;
+    padding: 0 !important;
+    color: #aaa;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: x-small;
+    text-align: left;
+}
+
+ul.no-bullets {
+    list-style-type: none; /* Remove bullets */
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margins */
+    text-align: left;
+}

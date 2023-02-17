@@ -1,0 +1,145 @@
+doctype html
+html
+    head
+        title Stuntman - rule editor
+        script(src='https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.35.0/min/vs/loader.min.js')
+        style
+            include style.css
+    body(style='color: rgb(204, 204, 204); background-color: rgb(50, 50, 50)')
+        button#newRule(type='button', onclick='window.newRule()') New rule
+        button#saveRule(type='button', onclick='window.saveRule()', disabled) Save rule
+        div(style='width: 100%; overflow: hidden')
+            div(style='width: 230px; float: left')
+                h3 Rules
+                    ul#ruleKeys.no-bullets
+                        each ruleId in ruleKeys
+                            li
+                                button.rule(
+                                    type='button',
+                                    onclick='window.setRuleModel(this.getAttribute("data-rule-id"))',
+                                    data-rule-id=ruleId
+                                )= ruleId
+            div(style='margin-left: 240px')
+                #container(style='height: 400px')
+                    script.
+                        const uuidv4 = () => {
+                            function getRandomSymbol(symbol) {
+                                var array;
+
+                                if (symbol === 'y') {
+                                    array = ['8', '9', 'a', 'b'];
+                                    return array[Math.floor(Math.random() * array.length)];
+                                }
+
+                                array = new Uint8Array(1);
+                                window.crypto.getRandomValues(array);
+                                return (array[0] % 16).toString(16);
+                            }
+
+                            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, getRandomSymbol);
+                        };
+                        require.config({
+                            paths: {
+                                vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.35.0/min/vs',
+                            },
+                        });
+                        require(['vs/editor/editor.main'], function () {
+                            monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
+                            monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                                noSemanticValidation: false,
+                                noSyntaxValidation: false,
+                            });
+
+                            // compiler options
+                            monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+                                target: monaco.languages.typescript.ScriptTarget.ES6,
+                                allowNonTsExtensions: true,
+                                noLib: true,
+                                moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+                                module: monaco.languages.typescript.ModuleKind.CommonJS,
+                                noEmit: true,
+                                checkJs: true,
+                                allowJs: true,
+                                isolatedModules: true,
+                                typeRoots: ['node_modules/@types'],
+                            });
+
+                            monaco.languages.typescript.typescriptDefaults.addExtraLib(`!{INDEX_DTS}`, 'file:///node_modules/@types/stuntman/index.d.ts');
+                            const models = {};
+                            const rules = eval('(!{rules})');
+                            for (const ruleId of Object.keys(rules)) {
+                                models[ruleId] = monaco.editor.createModel("import type * as Stuntman from 'stuntman';\n\nvar STUNTMAN_RULE: Stuntman.Rule = " + rules[ruleId] + ';', 'typescript', `file:///${ruleId}.ts`);
+                            }
+                            const editor = monaco.editor.create(document.getElementById('container'), {
+                                theme: 'vs-dark',
+                                autoIndent: true,
+                                formatOnPaste: true,
+                                formatOnType: true,
+                                automaticLayout: true,
+                                autoIndent: true,
+                                tabSize: 2,
+                            });
+                            editor.onDidChangeModel((event) => {
+                                const isInternal = /^file:\/\/\/internal\/.+/.test(event.newModelUrl);
+                                if (isInternal) {
+                                    document.getElementById('saveRule').setAttribute('disabled', 'true');
+                                } else {
+                                    document.getElementById('saveRule').removeAttribute('disabled');
+                                }
+
+                                setTimeout(() => {
+                                    editor.getAction('editor.action.formatDocument').run();
+                                }, 100);
+                            });
+
+                            window.setRuleModel = (ruleId) => {
+                                if (history.pushState) {
+                                    const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?ruleId=${encodeURIComponent(ruleId)}`;
+                                    window.history.pushState({ path: newUrl }, '', newUrl);
+                                }
+                                editor.setModel(models[ruleId]);
+                            };
+
+                            const urlSearchParams = new URLSearchParams(window.location.search);
+                            if (urlSearchParams.has('ruleId') && urlSearchParams.get('ruleId') in models) {
+                                editor.setModel(models[urlSearchParams.get('ruleId')]);
+                            }
+
+                            window.saveRule = () => {
+                                document.getElementById('saveRule').setAttribute('disabled', 'true');
+                                const modelUri = editor.getModel().uri;
+                                const result = monaco.languages.typescript.getTypeScriptWorker();
+                                result.then((worker) => {
+                                    worker(modelUri).then(function (client) {
+                                        client.getEmitOutput(modelUri.toString()).then((output) => {
+                                            const ruleFunctionText = output.outputFiles[0].text.replace(/^export .+$/im, '');
+                                            const newId = new Function(ruleFunctionText + '\n return STUNTMAN_RULE;')().id;
+                                            fetch('/webgui/rules/unsafesave', {
+                                                method: 'POST',
+                                                headers: { 'content-type': 'text/plain' },
+                                                body: ruleFunctionText + '\n return STUNTMAN_RULE;',
+                                            }).then((response) => {
+                                                if (response.ok) {
+                                                    window.location.reload();
+                                                    return;
+                                                }
+                                                alert('Error when saving rule');
+                                                document.getElementById('saveRule').removeAttribute('disabled');
+                                            });
+                                        });
+                                    });
+                                });
+                            };
+
+                            window.newRule = () => {
+                                const ruleId = uuidv4();
+                                const emptyRule = `import type * as Stuntman from \'stuntman\';\n\nvar STUNTMAN_RULE: Stuntman.Rule = { id: '${ruleId}', matches: (req: Stuntman.Request) => true, ttlSeconds: 600 };`;
+                                models[ruleId] = monaco.editor.createModel(emptyRule, 'typescript', `file:///${ruleId}.ts`);
+                                const ruleKeyNode = document.getElementById('ruleKeys').firstChild;
+                                const ruleKeyNodeClone = ruleKeyNode.cloneNode(true);
+                                ruleKeyNodeClone.getElementsByTagName('button')[0].setAttribute('data-rule-id', ruleId);
+                                ruleKeyNodeClone.getElementsByTagName('button')[0].innerText = ruleId;
+                                document.getElementById('ruleKeys').appendChild(ruleKeyNodeClone);
+                                window.setRuleModel(ruleId);
+                            };
+                        });

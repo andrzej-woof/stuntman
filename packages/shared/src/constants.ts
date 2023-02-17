@@ -1,0 +1,14 @@
+export const DEFAULT_PROXY_TIMEOUT = 60000;
+export const DEFAULT_RULE_PRIORITY = 100;
+export const DEFAULT_MOCK_PORT = 2015;
+export const DEFAULT_API_PORT = 1985;
+export const DEFAULT_CACHE_MAX_ENTRIES = 500;
+export const DEFAULT_CACHE_MAX_SIZE = 500 * 1024 * 1024;
+export const DEFAULT_CACHE_TTL = 1000 * 60 * 60;
+export const DEFAULT_MOCK_DOMAIN = 'stuntman';
+export const DEFAULT_RULE_TTL_SECONDS = 60 * 10;
+export const MIN_RULE_TTL_SECONDS = 10;
+export const MAX_RULE_TTL_SECONDS = 60 * 60;
+export const CATCH_ALL_RULE_PRIORITY = Infinity;
+export const CATCH_RULE_NAME = 'internal/catch-all';
+export const EXTERNAL_DNS = ['8.8.8.8', '1.1.1.1'];

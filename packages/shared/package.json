@@ -1,0 +1,44 @@
+{
+    "name": "@stuntman/shared",
+    "version": "0.1.0",
+    "description": "Stuntman - HTTP proxy / mock shared types and utils",
+    "main": "src/index.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/andrzej-woof/stuntman.git"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "clean": "rm -fr dist",
+        "build": "tsc",
+        "lint": "prettier --check . && eslint . --ext ts",
+        "lint:fix": "prettier --write ./src && eslint ./src --ext ts --fix"
+    },
+    "keywords": [
+        "proxy",
+        "mock",
+        "http",
+        "https",
+        "server",
+        "api",
+        "e2e",
+        "development",
+        "rest",
+        "gql",
+        "end-to-end",
+        "testing",
+        "qa",
+        "automated-testing",
+        "stub",
+        "functional"
+    ],
+    "author": "Andrzej Pasterczyk",
+    "license": "MIT",
+    "dependencies": {
+        "config": "3.3.9",
+        "pino": "8.10.0"
+    },
+    "devDependencies": {
+        "@types/config": "3.3.0"
+    }
+}

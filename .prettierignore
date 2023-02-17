@@ -1,0 +1,7 @@
+.git/
+.ideal/
+.nyc_output/
+.vscode/
+coverage/
+node_modules/
+dist/

@@ -1,0 +1,32 @@
+{
+  "name": "@stuntman/client",
+  "version": "0.1.0",
+  "description": "Stuntman - HTTP proxy / mock API client",
+  "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andrzej-woof/stuntman.git"
+  },
+  "bugs": {
+    "url": "https://github.com/andrzej-woof/stuntman/issues"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -fr dist",
+    "build": "tsc",
+    "lint": "prettier --check . && eslint . --ext ts",
+    "lint:fix": "prettier --write ./src && eslint ./src --ext ts --fix"
+  },
+  "keywords": ["proxy", "mock", "http", "https", "server", "api", "e2e", "development", "rest", "gql", "end-to-end", "testing", "qa", "automated-testing", "stub", "functional"],
+  "author": "Andrzej Pasterczyk",
+  "license": "MIT",
+  "dependencies": {
+    "@stuntman/shared": "workspace:^0.1.0",
+    "serialize-javascript": "6.0.1",
+    "uuid": "9.0.0"
+  },
+  "devDependencies": {
+    "@types/serialize-javascript": "5.0.2",
+    "@types/uuid": "9.0.0"
+  }
+}

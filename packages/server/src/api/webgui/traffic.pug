@@ -1,0 +1,37 @@
+doctype html
+html
+    head
+        title Stuntman - rule editor
+        script(src='https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.35.0/min/vs/loader.min.js')
+        style
+            include style.css
+    body(style='color: rgb(204, 204, 204); background-color: rgb(50, 50, 50)')
+        div(style='width: 100%; overflow: hidden')
+            div(style='width: 200px; float: left')
+                h3 Traffic log
+            div(style='margin-left: 220px')
+                #container(style='height: 800px')
+                    script.
+                        require.config({
+                            paths: {
+                                vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.35.0/min/vs',
+                            },
+                        });
+                        require(['vs/editor/editor.main'], function () {
+                            const traffic = !{ traffic };
+                            const model = monaco.editor.createModel(JSON.stringify(traffic, null, 2), 'json');
+                            const editor = monaco.editor.create(document.getElementById('container'), {
+                                theme: 'vs-dark',
+                                autoIndent: true,
+                                formatOnPaste: true,
+                                formatOnType: true,
+                                automaticLayout: true,
+                                readOnly: true,
+                            });
+                            editor.onDidChangeModel((event) => {
+                                setTimeout(() => {
+                                    editor.getAction('editor.action.formatDocument').run();
+                                }, 100);
+                            });
+                            editor.setModel(model);
+                        });
