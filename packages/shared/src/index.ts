@@ -42,7 +42,9 @@ export enum HttpCode {
 
 export type LocalVariables = Record<string, SerializableTypes>;
 
-export type RuleMatchResult = boolean | { result: boolean; enableRuleIds?: string[]; disableRuleIds?: string[] };
+export type RuleMatchResult =
+    | boolean
+    | { result: boolean; enableRuleIds?: string[]; disableRuleIds?: string[]; description?: string };
 
 export type RemotableFunction<T extends Function> = {
     localFn: T;
@@ -197,3 +199,13 @@ export type ServerConfig = {
         traffic: StorageConfig;
     };
 };
+
+export interface RuleExecutorInterface {
+    addRule: (rule: Rule, overwrite?: boolean) => Promise<LiveRule>;
+    removeRule: (id: string) => Promise<void>;
+    enableRule: (id: string) => void;
+    disableRule: (id: string) => void;
+    findMatchingRule: (request: Request) => Promise<LiveRule | null>;
+    getRules: () => Promise<readonly LiveRule[]>;
+    getRule: (id: string) => Promise<LiveRule | undefined>;
+}

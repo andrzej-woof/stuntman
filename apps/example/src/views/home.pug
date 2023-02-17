@@ -1,0 +1,13 @@
+doctype html
+html
+    head
+        title Stuntman example - home
+        style
+            include style.css
+    body
+        h1 Scenario 1 - Sign up
+            ul 
+                li 
+                    a#signup_referral(href=`/signup?source=referral&uniqueId=${uniqueId}`) Sign up with referral
+                li
+                    a#signup_direct(href=`/signup?uniqueId=${uniqueId}`) Sign up directly

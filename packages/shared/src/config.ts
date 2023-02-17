@@ -42,7 +42,8 @@ let configFromFile: RecursivePartial<ServerConfig> = {};
 try {
     configFromFile = config.get<RecursivePartial<ServerConfig>>('stuntman');
 } catch (error) {
-    console.warn('unable to find correct config');
+    // eslint-disable-next-line no-console
+    console.warn('unable to find correct config - starting with defaults');
 }
 
 export const serverConfig = defaults(configFromFile, defaultConfig) as ServerConfig;

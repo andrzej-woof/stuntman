@@ -8,4 +8,7 @@ module.exports = {
         sourceType: 'module',
         project: ['./tsconfig.json'], // Specify it only for TypeScript files
     },
+    rules: {
+        'no-console': 'error'
+    }
 };
