@@ -1,12 +1,13 @@
 {
   "name": "@stuntman/client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Stuntman - HTTP proxy / mock API client",
   "main": "dist/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/andrzej-woof/stuntman.git"
   },
+  "homepage": "https://github.com/andrzej-woof/stuntman#readme",
   "bugs": {
     "url": "https://github.com/andrzej-woof/stuntman/issues"
   },
@@ -21,12 +22,18 @@
   "author": "Andrzej Pasterczyk",
   "license": "MIT",
   "dependencies": {
-    "@stuntman/shared": "workspace:^0.1.0",
+    "@stuntman/shared": "workspace:^0.1.1",
     "serialize-javascript": "6.0.1",
     "uuid": "9.0.0"
   },
   "devDependencies": {
     "@types/serialize-javascript": "5.0.2",
     "@types/uuid": "9.0.0"
-  }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
 }

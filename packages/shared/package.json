@@ -1,11 +1,15 @@
 {
     "name": "@stuntman/shared",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Stuntman - HTTP proxy / mock shared types and utils",
     "main": "dist/index.js",
     "repository": {
         "type": "git",
         "url": "https://github.com/andrzej-woof/stuntman.git"
+    },
+    "homepage": "https://github.com/andrzej-woof/stuntman#readme",
+    "bugs": {
+      "url": "https://github.com/andrzej-woof/stuntman/issues"
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",

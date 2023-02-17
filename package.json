@@ -1,6 +1,6 @@
 {
   "name": "@stuntman/stuntman",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Stuntman - HTTP proxy / mock with API and client libraries",
   "private": true,
   "main": "index.js",
@@ -8,6 +8,7 @@
     "type": "git",
     "url": "https://github.com/andrzej-woof/stuntman.git"
   },
+  "homepage": "https://github.com/andrzej-woof/stuntman#readme",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "pnpm -r clean",
@@ -30,5 +31,11 @@
     "prettier": "2.8.4",
     "ts-node": "10.9.1",
     "typescript": "4.9.5"
-  }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ]
 }

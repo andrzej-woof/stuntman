@@ -30,7 +30,7 @@ const defaultConfig: ServerConfig = {
         traffic: {
             limitCount: DEFAULT_CACHE_MAX_ENTRIES,
             limitSize: DEFAULT_CACHE_MAX_SIZE,
-            ttl: DEFAULT_CACHE_TTL
+            ttl: DEFAULT_CACHE_TTL,
         },
     },
     webgui: {
