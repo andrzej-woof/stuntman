@@ -10,6 +10,8 @@ pnpm test:example
 
 Main purpose of this app is to demonstrate a potential setup for Stuntman.
 
+It contains `exampleApp` (that simulates your node application), `@stuntman/server` and example E2E tests written with [testcafe](https://github.com/DevExpress/testcafe#readme) utilizing `@stuntman/client` to interact with mock server.
+
 The example app code uses `node-fetch` with overriden DNS lookup that will resolve any `*.stuntman`/`*.stuntmanhttp`/`*.stuntmans` domain to localhost.
 Same solution could be integrated in your application code, but in a real life scenario you could use custom DNS on your test environment, which would point all `*.stuntman` subdomains to a Stuntman instance.
 
