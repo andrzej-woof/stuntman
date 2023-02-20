@@ -32,9 +32,9 @@ importers:
 
   apps/example:
     specifiers:
-      '@stuntman/client': workspace:^0.1.1
-      '@stuntman/server': workspace:^0.1.1
-      '@stuntman/shared': workspace:^0.1.1
+      '@stuntman/client': workspace:^0.1.2
+      '@stuntman/server': workspace:^0.1.2
+      '@stuntman/shared': workspace:^0.1.2
       '@types/express': 4.17.17
       '@types/express-session': 1.17.6
       '@types/node-fetch': 2.6.2
@@ -63,7 +63,7 @@ importers:
 
   packages/client:
     specifiers:
-      '@stuntman/shared': workspace:^0.1.1
+      '@stuntman/shared': workspace:^0.1.2
       '@types/serialize-javascript': 5.0.2
       '@types/uuid': 9.0.0
       serialize-javascript: 6.0.1
@@ -79,7 +79,7 @@ importers:
   packages/server:
     specifiers:
       '@prettier/plugin-pug': 2.4.1
-      '@stuntman/shared': workspace:^0.1.1
+      '@stuntman/shared': workspace:^0.1.2
       '@types/express': 4.17.17
       '@types/serialize-javascript': 5.0.2
       '@types/uuid': 9.0.0
@@ -90,7 +90,7 @@ importers:
       prettier: 2.8.4
       pug: 3.0.2
       serialize-javascript: 6.0.1
-      undici: ^5.20.0
+      undici: 5.20.0
       uuid: 9.0.0
     dependencies:
       '@stuntman/shared': link:../shared
