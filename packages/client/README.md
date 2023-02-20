@@ -30,4 +30,4 @@ const rule = ruleBuilder()
 client.addRule(rule).then((x) => console.log(x));
 ```
 
-Check [example app](https://github.com/andrzej-woof/stuntman/tree/master/packages/example#readme) for more samples
+Check [example app](https://github.com/andrzej-woof/stuntman/tree/master/apps/example#readme) for more samples
