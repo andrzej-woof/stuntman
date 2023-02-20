@@ -13,8 +13,7 @@
         "url": "https://github.com/andrzej-woof/stuntman/issues"
     },
     "scripts": {
-        "test": "testcafe chrome **/*.testcafe.ts",
-        "test2": "testcafe chrome **/*.testcafe.ts --app 'ts-node ./src/index.ts' --app-init-delay 3000",
+        "test:example": "testcafe chrome **/*.testcafe.ts --app 'ts-node ./src/index.ts' --app-init-delay 3000",
         "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' ./src/index.ts",
         "clean": "rm -fr dist",
         "build": "tsc",

@@ -2,6 +2,12 @@
 
 Example app for [Stunman](https://github.com/andrzej-woof/stuntman#readme)
 
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm test:example
+```
+
 Main purpose of this app is to demonstrate a potential setup for Stuntman.
 
 The example app code uses `node-fetch` with overriden DNS lookup that will resolve any `*.stuntman`/`*.stuntmanhttp`/`*.stuntmans` domain to localhost.
