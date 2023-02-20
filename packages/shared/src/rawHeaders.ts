@@ -65,6 +65,20 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
         return new RawHeaders(...headerPairs.flatMap((x) => x));
     }
 
+    static fromHeadersRecord(headersRecord: Record<string, string | string[] | undefined>): RawHeaders {
+        const output = new RawHeaders();
+        for (const [key, value] of Object.entries(headersRecord)) {
+            if (typeof value === 'string' || value === undefined) {
+                output.add(key, value ?? '');
+                continue;
+            }
+            for (const subValue of value) {
+                output.add(key, subValue);
+            }
+        }
+        return output;
+    }
+
     static toHeaderPairs(rawHeaders: string[]): readonly [string, string][] {
         const headers = new Array<[string, string]>();
         for (let headerIndex = 0; headerIndex < rawHeaders.length; headerIndex += 2) {

@@ -1,8 +1,10 @@
+import { request as fetchRequest } from 'undici';
+import type { Dispatcher } from 'undici';
 import http from 'http';
 import https from 'https';
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { ruleExecutor } from './ruleExecutor';
+import { getRuleExecutor } from './ruleExecutor';
 import { getTrafficStore } from './storage';
 import { RawHeaders, logger, HttpCode } from '@stuntman/shared';
 import RequestContext from './requestContext';
@@ -48,7 +50,7 @@ const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody | undefi
 // TODO add proper web proxy mode
 
 export class Mock {
-    protected mockUuid: string;
+    public readonly mockUuid: string;
     protected options: Stuntman.ServerConfig;
     protected mockApp: express.Express;
     protected MOCK_DOMAIN_REGEX: RegExp;
@@ -69,6 +71,10 @@ export class Mock {
         return this._api;
     }
 
+    public get ruleExecutor(): Stuntman.RuleExecutorInterface {
+        return getRuleExecutor(this.mockUuid);
+    }
+
     constructor(options: Stuntman.ServerConfig) {
         this.mockUuid = uuidv4();
         this.options = options;
@@ -77,7 +83,7 @@ export class Mock {
         }
 
         this.MOCK_DOMAIN_REGEX = new RegExp(
-            `(?:\\.([0-9]+))?\\.(?:(?:${this.options.mock.domain})|(?:localhost))(https?)?(:${this.options.mock.port}${
+            `(?:\\.([0-9]+))?\\.(?:(?:${this.options.mock.domain}(https?)?)|(?:localhost))(:${this.options.mock.port}${
                 this.options.mock.httpsPort ? `|${this.options.mock.httpsPort}` : ''
             })?(?:\\b|$)`,
             'i'
@@ -107,7 +113,7 @@ export class Mock {
             const ctx: RequestContext | null = RequestContext.get(req);
             const requestUuid = ctx?.uuid || uuidv4();
             const timestamp = Date.now();
-            const originalHostname = req.hostname;
+            const originalHostname = req.headers.host || req.hostname;
             const unproxiedHostname = req.hostname.replace(this.MOCK_DOMAIN_REGEX, '');
             const isProxiedHostname = originalHostname !== unproxiedHostname;
             const originalRequest = {
@@ -116,7 +122,8 @@ export class Mock {
                 url: `${req.protocol}://${req.hostname}${req.originalUrl}`,
                 method: req.method,
                 rawHeaders: new RawHeaders(...req.rawHeaders),
-                ...(Buffer.isBuffer(req.body) && { body: req.body.toString('utf-8') }),
+                ...((Buffer.isBuffer(req.body) && { body: req.body.toString('utf-8') }) ||
+                    (typeof req.body === 'string' && { body: req.body })),
             };
             logger.debug(originalRequest, 'processing request');
             const logContext: Record<string, any> = {
@@ -134,7 +141,7 @@ export class Mock {
             if (!isProxiedHostname) {
                 this.removeProxyPort(mockEntry.modifiedRequest);
             }
-            const matchingRule = await ruleExecutor.findMatchingRule(mockEntry.modifiedRequest);
+            const matchingRule = await getRuleExecutor(this.mockUuid).findMatchingRule(mockEntry.modifiedRequest);
             if (matchingRule) {
                 mockEntry.mockRuleId = matchingRule.id;
                 mockEntry.labels = matchingRule.labels;
@@ -194,39 +201,42 @@ export class Mock {
                     controller.abort('remote client canceled the request');
                 }
             });
-            let targetResponse: Response;
-            const hasKeepAlive = !!mockEntry.modifiedRequest.rawHeaders
-                .toHeaderPairs()
-                .find((h) => /^connection$/.test(h[0]) && /^keep-alive$/.test(h[1]));
+            let targetResponse: Dispatcher.ResponseData;
             try {
-                targetResponse = await fetch(mockEntry.modifiedRequest.url, {
-                    redirect: 'manual',
-                    headers: mockEntry.modifiedRequest.rawHeaders
-                        .toHeaderPairs()
-                        .filter((h) => !/^connection$/.test(h[0]) && !/^keep-alive$/.test(h[1])),
+                const requestOptions = {
+                    headers: mockEntry.modifiedRequest.rawHeaders,
                     body: mockEntry.modifiedRequest.body,
-                    method: mockEntry.modifiedRequest.method,
-                    keepalive: !!hasKeepAlive,
-                });
+                    method: mockEntry.modifiedRequest.method.toUpperCase() as Dispatcher.HttpMethod,
+                };
+                logger.debug(
+                    {
+                        ...logContext,
+                        url: mockEntry.modifiedRequest.url,
+                        ...requestOptions,
+                    },
+                    'outgoing request attempt'
+                );
+                targetResponse = await fetchRequest(mockEntry.modifiedRequest.url, requestOptions);
+            } catch (error) {
+                logger.error({ ...logContext, error, request: mockEntry.modifiedRequest }, 'error fetching');
+                throw error;
             } finally {
                 controller = null;
                 clearTimeout(fetchTimeout);
             }
-            const targetResponseBuffer = Buffer.from(await targetResponse.arrayBuffer());
+            const targetResponseBuffer = Buffer.from(await targetResponse.body.arrayBuffer());
             const originalResponse = {
                 timestamp: Date.now(),
                 body: targetResponseBuffer.toString('binary'),
-                status: targetResponse.status,
-                rawHeaders: new RawHeaders(
-                    ...Array.from(targetResponse.headers.entries()).flatMap(([key, value]) => [key, value])
-                ),
+                status: targetResponse.statusCode,
+                rawHeaders: RawHeaders.fromHeadersRecord(targetResponse.headers),
             };
             logger.debug({ ...logContext, originalResponse }, 'received response');
             mockEntry.originalResponse = originalResponse;
             let modifedResponse: Stuntman.Response = {
                 ...originalResponse,
                 rawHeaders: new RawHeaders(
-                    ...Array.from(targetResponse.headers.entries()).flatMap(([key, value]) => {
+                    ...Array.from(originalResponse.rawHeaders.toHeaderPairs()).flatMap(([key, value]) => {
                         // TODO this replace may be too aggressive and doesn't handle protocol (won't be necessary with a trusted cert and mock serving http+https)
                         return [
                             key,
@@ -260,7 +270,10 @@ export class Mock {
                     if (/^content-(?:length|encoding)$/i.test(header[0])) {
                         continue;
                     }
-                    res.setHeader(header[0], header[1]);
+                    res.setHeader(
+                        header[0],
+                        isProxiedHostname ? header[1].replace(unproxiedHostname, originalHostname) : header[1]
+                    );
                 }
             }
             res.end(Buffer.from(modifedResponse.body, 'binary'));
@@ -276,7 +289,8 @@ export class Mock {
                 });
                 return;
             }
-            console.log('mock encountered a critical error. exiting');
+            // eslint-disable-next-line no-console
+            console.error('mock server encountered a critical error. exiting');
             process.exit(1);
         });
     }

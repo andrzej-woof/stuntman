@@ -3,7 +3,7 @@ import { AppError, DEFAULT_RULE_PRIORITY, HttpCode, logger } from '@stuntman/sha
 import type * as Stuntman from '@stuntman/shared';
 import { DEFAULT_RULES } from './rules';
 
-const rulesLock = new AwaitLock();
+const ruleExecutors: Record<string, RuleExecutor> = {};
 
 const transformMockRuleToLive = (rule: Stuntman.Rule): Stuntman.LiveRule => {
     return {
@@ -14,9 +14,10 @@ const transformMockRuleToLive = (rule: Stuntman.Rule): Stuntman.LiveRule => {
     };
 };
 
-class RuleExecutor {
+class RuleExecutor implements Stuntman.RuleExecutorInterface {
     // TODO persistent rule storage maybe
     private _rules: Stuntman.LiveRule[];
+    private rulesLock = new AwaitLock();
 
     private get enabledRules() {
         if (!this._rules) {
@@ -41,7 +42,7 @@ class RuleExecutor {
         if (!this.hasExpired()) {
             return;
         }
-        await rulesLock.acquireAsync();
+        await this.rulesLock.acquireAsync();
         const now = Date.now();
         try {
             this._rules = this._rules.filter((r) => {
@@ -52,13 +53,13 @@ class RuleExecutor {
                 return shouldKeep;
             });
         } finally {
-            await rulesLock.release();
+            await this.rulesLock.release();
         }
     }
 
     async addRule(rule: Stuntman.Rule, overwrite?: boolean): Promise<Stuntman.LiveRule> {
         await this.cleanUpExpired();
-        await rulesLock.acquireAsync();
+        await this.rulesLock.acquireAsync();
         try {
             if (this._rules.some((r) => r.id === rule.id)) {
                 if (!overwrite) {
@@ -71,7 +72,7 @@ class RuleExecutor {
             logger.debug(liveRule, 'rule added');
             return liveRule;
         } finally {
-            await rulesLock.release();
+            await this.rulesLock.release();
         }
     }
 
@@ -89,11 +90,11 @@ class RuleExecutor {
     async removeRule(rule: Stuntman.Rule): Promise<void>;
     async removeRule(ruleOrId: string | Stuntman.Rule): Promise<void> {
         await this.cleanUpExpired();
-        await rulesLock.acquireAsync();
+        await this.rulesLock.acquireAsync();
         try {
             this._removeRule(ruleOrId);
         } finally {
-            await rulesLock.release();
+            await this.rulesLock.release();
         }
     }
 
@@ -124,11 +125,16 @@ class RuleExecutor {
             requestId: request.id,
         };
         const matchingRule = this.enabledRules.find((rule) => {
-            const matchResult = rule.matches(request);
-            if (typeof matchResult === 'boolean') {
-                return matchResult;
+            try {
+                const matchResult = rule.matches(request);
+                logger.trace({ ...logContext, matchResult }, `rule match attempt for ${rule.id}`);
+                if (typeof matchResult === 'boolean') {
+                    return matchResult;
+                }
+                return matchResult.result;
+            } catch (error) {
+                logger.error({ ...logContext, ruleId: rule?.id, error }, 'error in rule match function');
             }
-            return matchResult.result;
         });
         if (!matchingRule) {
             logger.debug(logContext, 'no matching rule found');
@@ -136,7 +142,10 @@ class RuleExecutor {
         }
         const matchResult: Stuntman.RuleMatchResult = matchingRule.matches(request);
         logContext.ruleId = matchingRule.id;
-        logger.debug(logContext, 'matching rule found');
+        logger.debug(
+            { ...logContext, matchResultMessage: typeof matchResult !== 'boolean' ? matchResult.description : null },
+            'found matching rule'
+        );
         const matchingRuleClone = Object.freeze(Object.assign({}, matchingRule));
         ++matchingRule.counter;
         logContext.ruleCounter = matchingRule.counter;
@@ -190,4 +199,9 @@ class RuleExecutor {
     }
 }
 
-export const ruleExecutor = new RuleExecutor(DEFAULT_RULES.map((r) => ({ ...r, ttlSeconds: Infinity })));
+export const getRuleExecutor = (mockUuid: string): RuleExecutor => {
+    if (!ruleExecutors[mockUuid]) {
+        ruleExecutors[mockUuid] = new RuleExecutor(DEFAULT_RULES.map((r) => ({ ...r, ttlSeconds: Infinity })));
+    }
+    return ruleExecutors[mockUuid];
+};

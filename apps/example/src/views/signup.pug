@@ -1,0 +1,15 @@
+doctype html
+html
+    head
+        title Stuntman example - sign up
+        style
+            include style.css
+    body
+        p
+            form(action='/signup', method='POST')
+                p
+                | email: 
+                input#email(type='email', name='email', value='test@example.invalid')
+                input#signup_button(type='submit', value='Sign up')
+        p
+            a#back(href='/home') Go back

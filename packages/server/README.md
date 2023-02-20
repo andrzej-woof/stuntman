@@ -1,5 +1,13 @@
 # Stuntman
 
+Stuntman is a proxy/mock server that can be deployed remotely together with your application under test, working as either pass-through proxy allowing you to inspect traffic or proxy/mock which can intercept requests/responses and modify them or stub with predefined ones.
+
+It offers API and client library that can be used for example within E2E functional test scripts to dynamically alter it's behaviour for specific traffic matching set of rules of your definition.
+
+In order to get more familiar with the concept and how to use it please refer to [example app](https://github.com/andrzej-woof/stuntman/tree/master/packages/example#readme)
+
+> **_NOTE:_**  This project is at a very early stage of developement and as such may often contain breaking changes in upcoming releases before reaching stable version 1.0.0
+
 ## Building from source
 
 ### Prerequisites
@@ -22,6 +30,7 @@ pnpm stuntman
 ## Configuration
 
 Stuntman uses [config](https://github.com/node-config/node-config)
+
 You can create `config/default.json` with settings of your liking matching `ServerConfig` type
 
 ## Running as a package
@@ -67,8 +76,6 @@ go to your browser and visit `http://www.example.com.stuntman:2015/` to see the 
 for local playground you can also use `http://www.example.com.localhost:2015`
 
 ### Take a look at client
-
-Take a look at `./src/clientTestExample.ts`, you can use it to set up some rules
 
 Mind the scope of `Stuntman.RemotableFunction` like `matches`, `modifyRequest`, `modifyResponse`.
 `Stuntman.RemotableFunction.localFn` contains the function, but since it'll be executed on a remote mock server it cannot access any variables outside it's body. In order to pass variable values into the function use `Stuntman.RemotableFunction.variables` for example:

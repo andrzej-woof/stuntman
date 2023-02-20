@@ -1,6 +1,6 @@
 {
   "name": "@stuntman/server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Stuntman - HTTP proxy / mock server with API",
   "main": "dist/index.js",
   "repository": {
@@ -42,19 +42,22 @@
   "author": "Andrzej Pasterczyk",
   "license": "MIT",
   "dependencies": {
-    "@stuntman/shared": "workspace:^0.1.1",
+    "@stuntman/shared": "workspace:^0.1.2",
     "await-lock": "2.2.2",
     "express": "5.0.0-beta.1",
     "lru-cache": "7.16.0",
     "object-sizeof": "2.6.1",
-    "pug": "^3.0.2",
+    "pug": "3.0.2",
     "serialize-javascript": "6.0.1",
+    "undici": "5.20.0",
     "uuid": "9.0.0"
   },
   "devDependencies": {
+    "@prettier/plugin-pug": "2.4.1",
     "@types/express": "4.17.17",
     "@types/serialize-javascript": "5.0.2",
-    "@types/uuid": "9.0.0"
+    "@types/uuid": "9.0.0",
+    "prettier": "2.8.4"
   },
   "bin": {
     "stuntman": "./dist/bin/stuntman.js"

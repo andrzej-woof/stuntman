@@ -108,7 +108,7 @@ export const validateDeserializedRule = (deserializedRule: Stuntman.Rule) => {
         logger.error({ ruleId: deserializedRule.id }, error);
         throw new AppError({
             httpCode: HttpCode.UNPROCESSABLE_ENTITY,
-            message: 'match function returned invalid value',
+            message: 'match function threw an error',
         });
     }
     if (

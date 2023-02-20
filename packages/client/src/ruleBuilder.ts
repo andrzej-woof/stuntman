@@ -41,22 +41,28 @@ class RuleBuilderBaseBase {
             ttlSeconds: DEFAULT_RULE_TTL_SECONDS,
             priority: DEFAULT_RULE_PRIORITY,
             matches: {
-                localFn: (req: Stuntman.Request): boolean => {
+                localFn: (req: Stuntman.Request): Stuntman.RuleMatchResult => {
                     const ___url = new URL(req.url);
                     const ___headers = req.rawHeaders;
 
                     const arrayIndexerRegex = /\[(?<arrayIndex>[0-9]*)\]/i;
-                    const matchObject = (obj: any, path: string, value?: string | RegExp | number | boolean | null): boolean => {
+                    const matchObject = (
+                        obj: any,
+                        path: string,
+                        value?: string | RegExp | number | boolean | null,
+                        parentPath?: string
+                    ): Exclude<Stuntman.RuleMatchResult, boolean> => {
                         if (!obj) {
-                            return false;
+                            return { result: false, description: `${parentPath} is falsey` };
                         }
                         const [rawKey, ...rest] = path.split('.');
                         const key = rawKey.replace(arrayIndexerRegex, '');
                         const shouldBeArray = arrayIndexerRegex.test(rawKey);
                         const arrayIndex = Number(arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex);
                         const actualValue = key ? obj[key] : obj;
+                        const currentPath = `${parentPath ? `${parentPath}.` : ''}${rawKey}`;
                         if (value === undefined && actualValue === undefined) {
-                            return false;
+                            return { result: false, description: `${currentPath}=undefined` };
                         }
                         if (rest.length === 0) {
                             if (
@@ -64,25 +70,32 @@ class RuleBuilderBaseBase {
                                 (!Array.isArray(actualValue) ||
                                     !(!Number.isInteger(arrayIndex) && actualValue.length > Number(arrayIndex)))
                             ) {
-                                return false;
+                                return { result: false, description: `${currentPath} empty array` };
                             }
                             if (value === undefined) {
-                                return shouldBeArray
+                                const result = shouldBeArray
                                     ? !Number.isInteger(arrayIndex) || actualValue.length >= Number(arrayIndex)
                                     : actualValue !== undefined;
+                                return { result, description: `${currentPath}` };
                             }
                             if (!shouldBeArray) {
-                                return value instanceof RegExp ? value.test(actualValue) : value === actualValue;
+                                const result = value instanceof RegExp ? value.test(actualValue) : value === actualValue;
+                                return { result, description: `${currentPath}` };
                             }
                         }
                         if (shouldBeArray) {
-                            return Number.isInteger(arrayIndex)
-                                ? matchObject(actualValue[Number(arrayIndex)], rest.join('.'), value)
-                                : (actualValue as Array<any>).some((arrayValue) =>
-                                      matchObject(arrayValue, rest.join('.'), value)
-                                  );
+                            if (Number.isInteger(arrayIndex)) {
+                                return matchObject(actualValue[Number(arrayIndex)], rest.join('.'), value, currentPath);
+                            }
+                            const hasArrayMatch = (actualValue as Array<any>).some((arrayValue) =>
+                                matchObject(arrayValue, rest.join('.'), value, currentPath)
+                            );
+                            return { result: hasArrayMatch, description: `array match ${currentPath}` };
                         }
-                        return typeof actualValue !== 'object' ? false : matchObject(actualValue, rest.join('.'), value);
+                        if (typeof actualValue !== 'object') {
+                            return { result: false, description: `${currentPath} not an object` };
+                        }
+                        return matchObject(actualValue, rest.join('.'), value, currentPath);
                     };
 
                     const ___matchesValue = (matcher: number | string | RegExp | undefined, value?: string | number): boolean => {
@@ -104,32 +117,53 @@ class RuleBuilderBaseBase {
                         return true;
                     };
                     if (!___matchesValue(matchBuilderVariables.filter, req.url)) {
-                        return false;
+                        return {
+                            result: false,
+                            description: `url ${req.url} doesn't match ${matchBuilderVariables.filter?.toString()}`,
+                        };
                     }
                     if (!___matchesValue(matchBuilderVariables.hostname, ___url.hostname)) {
-                        return false;
+                        return {
+                            result: false,
+                            description: `hostname ${
+                                ___url.hostname
+                            } doesn't match ${matchBuilderVariables.hostname?.toString()}`,
+                        };
                     }
                     if (!___matchesValue(matchBuilderVariables.pathname, ___url.pathname)) {
-                        return false;
+                        return {
+                            result: false,
+                            description: `pathname ${
+                                ___url.pathname
+                            } doesn't match ${matchBuilderVariables.pathname?.toString()}`,
+                        };
                     }
                     if (matchBuilderVariables.searchParams) {
                         for (const searchParamMatcher of matchBuilderVariables.searchParams) {
                             if (typeof searchParamMatcher === 'string') {
-                                return ___url.searchParams.has(searchParamMatcher);
+                                const result = ___url.searchParams.has(searchParamMatcher);
+                                return { result, description: `searchParams.has("${searchParamMatcher}")` };
                             }
                             if (searchParamMatcher instanceof RegExp) {
-                                return Array.from(___url.searchParams.keys()).some((key) => searchParamMatcher.test(key));
+                                const result = Array.from(___url.searchParams.keys()).some((key) => searchParamMatcher.test(key));
+                                return { result, description: `searchParams.keys() matches ${searchParamMatcher.toString()}` };
                             }
                             if (!___url.searchParams.has(searchParamMatcher.key)) {
-                                return false;
+                                return { result: false, description: `searchParams.has("${searchParamMatcher.key}")` };
                             }
                             if (searchParamMatcher.value) {
                                 const value = ___url.searchParams.get(searchParamMatcher.key);
                                 if (value === null) {
-                                    return false;
+                                    return {
+                                        result: false,
+                                        description: `searchParams.get("${searchParamMatcher.key}") === null`,
+                                    };
                                 }
                                 if (!___matchesValue(searchParamMatcher.value, value)) {
-                                    return false;
+                                    return {
+                                        result: false,
+                                        description: `searchParams.get("${searchParamMatcher.key}") = "${searchParamMatcher.value}"`,
+                                    };
                                 }
                             }
                         }
@@ -137,31 +171,49 @@ class RuleBuilderBaseBase {
                     if (matchBuilderVariables.headers) {
                         for (const headerMatcher of matchBuilderVariables.headers) {
                             if (typeof headerMatcher === 'string') {
-                                return ___headers.has(headerMatcher);
+                                const result = ___headers.has(headerMatcher);
+                                return { result, description: `headers.has("${headerMatcher}")` };
                             }
                             if (headerMatcher instanceof RegExp) {
-                                return ___headers.toHeaderPairs().some(([key]) => headerMatcher.test(key));
+                                const result = ___headers.toHeaderPairs().some(([key]) => headerMatcher.test(key));
+                                return { result, description: `headers.keys matches ${headerMatcher.toString()}` };
                             }
                             if (!___headers.has(headerMatcher.key)) {
-                                return false;
+                                return { result: false, description: `headers.has("${headerMatcher.key}")` };
                             }
                             if (headerMatcher.value) {
                                 const value = ___headers.get(headerMatcher.key);
                                 if (value === null) {
-                                    return false;
+                                    return { result: false, description: `headers.get("${headerMatcher.key}") === null` };
                                 }
                                 if (!___matchesValue(headerMatcher.value, value as string)) {
-                                    return false;
+                                    return {
+                                        result: false,
+                                        description: `headerMatcher.get("${headerMatcher.key}") = "${headerMatcher.value}"`,
+                                    };
                                 }
                             }
                         }
                     }
                     if (matchBuilderVariables.bodyText === null && !!req.body) {
-                        return false;
+                        return { result: false, description: `empty body` };
                     }
                     if (matchBuilderVariables.bodyText) {
-                        if (!___matchesValue(matchBuilderVariables.bodyText, req.body)) {
-                            return false;
+                        if (!req.body) {
+                            return { result: false, description: `empty body` };
+                        }
+                        if (matchBuilderVariables.bodyText instanceof RegExp) {
+                            if (!___matchesValue(matchBuilderVariables.bodyText, req.body)) {
+                                return {
+                                    result: false,
+                                    description: `body text doesn't match ${matchBuilderVariables.bodyText.toString()}`,
+                                };
+                            }
+                        } else if (!req.body.includes(matchBuilderVariables.bodyText)) {
+                            return {
+                                result: false,
+                                description: `body text doesn't include "${matchBuilderVariables.bodyText}"`,
+                            };
                         }
                     }
                     if (matchBuilderVariables.bodyJson) {
@@ -169,47 +221,63 @@ class RuleBuilderBaseBase {
                         try {
                             json = JSON.parse(req.body);
                         } catch (kiss) {
-                            return false;
+                            return { result: false, description: `unparseable json` };
                         }
                         if (!json) {
-                            return false;
+                            return { result: false, description: `empty json object` };
                         }
                         for (const jsonMatcher of Array.isArray(matchBuilderVariables.bodyJson)
                             ? matchBuilderVariables.bodyJson
                             : [matchBuilderVariables.bodyJson]) {
                             if (!matchObject(json, jsonMatcher.key, jsonMatcher.value)) {
-                                return false;
+                                return { result: false, description: `$.${jsonMatcher.key} != "${jsonMatcher.value}"` };
                             }
                         }
                     }
                     if (matchBuilderVariables.bodyGql) {
                         if (!req.gqlBody) {
-                            return false;
+                            return { result: false, description: `not a gql body` };
                         }
                         if (!___matchesValue(matchBuilderVariables.bodyGql.methodName, req.gqlBody.methodName)) {
-                            return false;
+                            return {
+                                result: false,
+                                description: `methodName "${matchBuilderVariables.bodyGql.methodName}" !== "${req.gqlBody.methodName}"`,
+                            };
                         }
                         if (!___matchesValue(matchBuilderVariables.bodyGql.operationName, req.gqlBody.operationName)) {
-                            return false;
+                            return {
+                                result: false,
+                                description: `operationName "${matchBuilderVariables.bodyGql.operationName}" !== "${req.gqlBody.operationName}"`,
+                            };
                         }
                         if (!___matchesValue(matchBuilderVariables.bodyGql.query, req.gqlBody.query)) {
-                            return false;
+                            return {
+                                result: false,
+                                description: `query "${matchBuilderVariables.bodyGql.query}" !== "${req.gqlBody.query}"`,
+                            };
                         }
                         if (!___matchesValue(matchBuilderVariables.bodyGql.type, req.gqlBody.type)) {
-                            return false;
+                            return {
+                                result: false,
+                                description: `type "${matchBuilderVariables.bodyGql.type}" !== "${req.gqlBody.type}"`,
+                            };
                         }
                         if (!matchBuilderVariables.bodyGql.variables) {
-                            return true;
+                            return { result: true, description: `no variables to match` };
                         }
                         for (const jsonMatcher of Array.isArray(matchBuilderVariables.bodyGql.variables)
                             ? matchBuilderVariables.bodyGql.variables
                             : [matchBuilderVariables.bodyGql.variables]) {
-                            if (!matchObject(req.gqlBody.variables, jsonMatcher.key, jsonMatcher.value)) {
-                                return false;
+                            const matchObjectResult = matchObject(req.gqlBody.variables, jsonMatcher.key, jsonMatcher.value);
+                            if (!matchObjectResult.result) {
+                                return {
+                                    result: false,
+                                    description: `GQL variable ${jsonMatcher.key} != "${jsonMatcher.value}". Detail: ${matchObjectResult.description}`,
+                                };
                             }
                         }
                     }
-                    return true;
+                    return { result: true, description: 'match' };
                 },
                 localVariables: { matchBuilderVariables: this._matchBuilderVariables },
             },
@@ -290,8 +358,7 @@ class RuleBuilder extends RuleBuilderBase {
     }
 
     onAnyRequest(): RuleBuilderInitialized {
-        this.rule.matches = { localFn: () => true };
-        return new RuleBuilderInitialized(this.rule, this._matchBuilderVariables);
+        return this.onRequestTo(/.*/);
     }
 }
 

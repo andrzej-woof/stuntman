@@ -2,7 +2,7 @@ import http from 'http';
 import express, { NextFunction, Request, Response, Express as ExpressServer } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getTrafficStore } from '../storage';
-import { ruleExecutor } from '../ruleExecutor';
+import { getRuleExecutor } from '../ruleExecutor';
 import { logger, AppError, HttpCode, MAX_RULE_TTL_SECONDS, stringify, INDEX_DTS } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
 import RequestContext from '../requestContext';
@@ -36,20 +36,20 @@ export class API {
         });
 
         this.apiApp.get('/rule', async (req, res) => {
-            res.send(stringify(await ruleExecutor.getRules()));
+            res.send(stringify(await getRuleExecutor(this.options.mockUuid).getRules()));
         });
 
         this.apiApp.get('/rule/:ruleId', async (req, res) => {
-            res.send(stringify(await ruleExecutor.getRule(req.params.ruleId)));
+            res.send(stringify(await getRuleExecutor(this.options.mockUuid).getRule(req.params.ruleId)));
         });
 
         this.apiApp.get('/rule/:ruleId/disable', (req, res) => {
-            ruleExecutor.disableRule(req.params.ruleId);
+            getRuleExecutor(this.options.mockUuid).disableRule(req.params.ruleId);
             res.send();
         });
 
         this.apiApp.get('/rule/:ruleId/enable', (req, res) => {
-            ruleExecutor.enableRule(req.params.ruleId);
+            getRuleExecutor(this.options.mockUuid).enableRule(req.params.ruleId);
             res.send();
         });
 
@@ -58,12 +58,12 @@ export class API {
             validateDeserializedRule(deserializedRule);
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            const rule = await ruleExecutor.addRule(deserializedRule);
+            const rule = await getRuleExecutor(this.options.mockUuid).addRule(deserializedRule);
             res.send(stringify(rule));
         });
 
         this.apiApp.get('/rule/:ruleId/remove', async (req, res) => {
-            await ruleExecutor.removeRule(req.params.ruleId);
+            await getRuleExecutor(this.options.mockUuid).removeRule(req.params.ruleId);
             res.send();
         });
 
@@ -102,14 +102,14 @@ export class API {
                 });
                 return;
             }
-            console.log('Application encountered a critical error. Exiting');
+            // eslint-disable-next-line no-console
+            console.log('API server encountered a critical error. Exiting');
             process.exit(1);
         });
 
-        this.apiApp.set('views', __dirname + '/webgui');
-        this.apiApp.set('view engine', 'pug');
-
         if (!webGuiOptions?.disabled) {
+            this.apiApp.set('views', __dirname + '/webgui');
+            this.apiApp.set('view engine', 'pug');
             this.initWebGui();
         }
     }
@@ -117,7 +117,7 @@ export class API {
     private initWebGui() {
         this.apiApp.get('/webgui/rules', async (req, res) => {
             const rules: Record<string, string> = {};
-            for (const rule of await ruleExecutor.getRules()) {
+            for (const rule of await getRuleExecutor(this.options.mockUuid).getRules()) {
                 rules[rule.id] = serializeJavascript(liveRuleToRule(rule), { unsafe: true });
             }
             res.render('rules', { rules: escapedSerialize(rules), INDEX_DTS, ruleKeys: Object.keys(rules) });
@@ -148,7 +148,7 @@ export class API {
             ) {
                 throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'Invalid rule' });
             }
-            await ruleExecutor.addRule(
+            await getRuleExecutor(this.options.mockUuid).addRule(
                 {
                     id: rule.id,
                     matches: rule.matches,

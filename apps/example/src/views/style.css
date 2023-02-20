@@ -1,0 +1,13 @@
+* {
+    font-family: Menlo, Monaco, 'Courier New', monospace;
+}
+
+body {
+    color: rgb(204, 204, 204);
+    background-color: rgb(50, 50, 50);
+    font-family: Menlo, Monaco, 'Courier New', monospace;
+}
+
+a {
+    color: white;
+}
