@@ -60,6 +60,7 @@ export class Mock {
     protected trafficStore: LRUCache<string, Stuntman.LogEntry>;
     protected ipUtils: IPUtils | null = null;
     private _api: API | null = null;
+    private requestHandler: (req: express.Request, res: express.Response) => Promise<void>;
 
     get apiServer() {
         if (this.options.api.disabled) {
@@ -100,6 +101,132 @@ export class Mock {
                 ? null
                 : new IPUtils({ mockUuid: this.mockUuid, externalDns: this.options.mock.externalDns });
 
+        this.requestHandler = async (req: express.Request, res: express.Response): Promise<void> => {
+            const ctx: RequestContext | null = RequestContext.get(req);
+            const requestUuid = ctx?.uuid || uuidv4();
+            const timestamp = Date.now();
+            const originalHostname = req.headers.host || req.hostname;
+            const unproxiedHostname = req.hostname.replace(this.MOCK_DOMAIN_REGEX, '');
+            const isProxiedHostname = originalHostname !== unproxiedHostname;
+            const originalRequest = {
+                id: requestUuid,
+                timestamp,
+                url: `${req.protocol}://${req.hostname}${req.originalUrl}`,
+                method: req.method,
+                rawHeaders: new RawHeaders(...req.rawHeaders),
+                ...((Buffer.isBuffer(req.body) && { body: req.body.toString('utf-8') }) ||
+                    (typeof req.body === 'string' && { body: req.body })),
+            };
+            logger.debug(originalRequest, 'processing request');
+            const logContext: Record<string, any> = {
+                requestId: originalRequest.id,
+            };
+            const mockEntry: WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'> = {
+                originalRequest,
+                modifiedRequest: {
+                    ...this.unproxyRequest(req),
+                    id: requestUuid,
+                    timestamp,
+                    ...(originalRequest.body && { gqlBody: naiveGQLParser(originalRequest.body) }),
+                },
+            };
+            if (!isProxiedHostname) {
+                this.removeProxyPort(mockEntry.modifiedRequest);
+            }
+            const matchingRule = await getRuleExecutor(this.mockUuid).findMatchingRule(mockEntry.modifiedRequest);
+            if (matchingRule) {
+                mockEntry.mockRuleId = matchingRule.id;
+                mockEntry.labels = matchingRule.labels;
+                if (matchingRule.actions?.mockResponse) {
+                    const staticResponse =
+                        typeof matchingRule.actions.mockResponse === 'function'
+                            ? matchingRule.actions.mockResponse(mockEntry.modifiedRequest)
+                            : matchingRule.actions.mockResponse;
+                    mockEntry.modifiedResponse = staticResponse;
+                    logger.debug({ ...logContext, staticResponse }, 'replying with mocked response');
+                    if (matchingRule.storeTraffic) {
+                        this.trafficStore.set(requestUuid, mockEntry);
+                    }
+                    if (staticResponse.rawHeaders) {
+                        for (const header of staticResponse.rawHeaders.toHeaderPairs()) {
+                            res.setHeader(header[0], header[1]);
+                        }
+                    }
+                    res.status(staticResponse.status || 200);
+                    res.send(staticResponse.body);
+                    // static response blocks any further processing
+                    return;
+                }
+                if (matchingRule.actions?.modifyRequest) {
+                    mockEntry.modifiedRequest = matchingRule.actions?.modifyRequest(mockEntry.modifiedRequest);
+                    logger.debug({ ...logContext, modifiedRequest: mockEntry.modifiedRequest }, 'modified original request');
+                }
+            }
+            if (this.ipUtils && !isProxiedHostname && !this.ipUtils.isIP(originalHostname)) {
+                const hostname = originalHostname.split(':')[0];
+                try {
+                    const internalIPs = await this.ipUtils.resolveIP(hostname);
+                    if (this.ipUtils.isLocalhostIP(internalIPs) && this.options.mock.externalDns.length) {
+                        const externalIPs = await this.ipUtils.resolveIP(hostname, { useExternalDns: true });
+                        logger.debug({ ...logContext, hostname, externalIPs, internalIPs }, 'switched to external IP');
+                        mockEntry.modifiedRequest.url = mockEntry.modifiedRequest.url.replace(
+                            /^(https?:\/\/)[^:/]+/i,
+                            `$1${externalIPs}`
+                        );
+                    }
+                } catch (error) {
+                    // swallow the exeception, don't think much can be done at this point
+                    logger.warn({ ...logContext, error }, `error trying to resolve IP for "${hostname}"`);
+                }
+            }
+    
+            const originalResponse = await this.proxyRequest(req, mockEntry, logContext);
+    
+            logger.debug({ ...logContext, originalResponse }, 'received response');
+            mockEntry.originalResponse = originalResponse;
+            let modifedResponse: Stuntman.Response = {
+                ...originalResponse,
+                rawHeaders: new RawHeaders(
+                    ...Array.from(originalResponse.rawHeaders.toHeaderPairs()).flatMap(([key, value]) => {
+                        // TODO this replace may be too aggressive and doesn't handle protocol (won't be necessary with a trusted cert and mock serving http+https)
+                        return [
+                            key,
+                            isProxiedHostname
+                                ? value
+                                : value.replace(
+                                      new RegExp(`(?:^|\\b)(${unproxiedHostname.replace('.', '\\.')})(?:\\b|$)`, 'igm'),
+                                      originalHostname
+                                  ),
+                        ];
+                    })
+                ),
+            };
+            if (matchingRule?.actions?.modifyResponse) {
+                modifedResponse = matchingRule?.actions?.modifyResponse(mockEntry.modifiedRequest, originalResponse);
+                logger.debug({ ...logContext, modifedResponse }, 'modified response');
+            }
+    
+            mockEntry.modifiedResponse = modifedResponse;
+            if (matchingRule?.storeTraffic) {
+                this.trafficStore.set(requestUuid, mockEntry);
+            }
+    
+            if (modifedResponse.status) {
+                res.status(modifedResponse.status);
+            }
+            if (modifedResponse.rawHeaders) {
+                for (const header of modifedResponse.rawHeaders.toHeaderPairs()) {
+                    // since fetch decompresses responses we need to get rid of some headers
+                    // TODO maybe could be handled better than just skipping, although express should add these back for new body
+                    // if (/^content-(?:length|encoding)$/i.test(header[0])) {
+                    //     continue;
+                    // }
+                    res.setHeader(header[0], isProxiedHostname ? header[1].replace(unproxiedHostname, originalHostname) : header[1]);
+                }
+            }
+            res.end(Buffer.from(modifedResponse.body, 'binary'));
+        };    
+
         this.mockApp = express();
         // TODO for now request body is just a buffer passed further, not inflated
         this.mockApp.use(express.raw({ type: '*/*' }));
@@ -114,7 +241,7 @@ export class Mock {
         this.mockApp.use((error: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
             const ctx: RequestContext | null = RequestContext.get(req);
             const uuid = ctx?.uuid || uuidv4();
-            logger.error({ ...error, uuid }, 'Unexpected error');
+            logger.error({ message: error.message, stack: error.stack, name: error.name, uuid }, 'unexpected error');
             if (res) {
                 res.status(HttpCode.INTERNAL_SERVER_ERROR).json({
                     error: { message: error.message, httpCode: HttpCode.INTERNAL_SERVER_ERROR, uuid },
@@ -175,132 +302,6 @@ export class Mock {
             status: targetResponse.statusCode,
             rawHeaders: RawHeaders.fromHeadersRecord(targetResponse.headers),
         };
-    }
-
-    private async requestHandler(req: express.Request, res: express.Response) {
-        const ctx: RequestContext | null = RequestContext.get(req);
-        const requestUuid = ctx?.uuid || uuidv4();
-        const timestamp = Date.now();
-        const originalHostname = req.headers.host || req.hostname;
-        const unproxiedHostname = req.hostname.replace(this.MOCK_DOMAIN_REGEX, '');
-        const isProxiedHostname = originalHostname !== unproxiedHostname;
-        const originalRequest = {
-            id: requestUuid,
-            timestamp,
-            url: `${req.protocol}://${req.hostname}${req.originalUrl}`,
-            method: req.method,
-            rawHeaders: new RawHeaders(...req.rawHeaders),
-            ...((Buffer.isBuffer(req.body) && { body: req.body.toString('utf-8') }) ||
-                (typeof req.body === 'string' && { body: req.body })),
-        };
-        logger.debug(originalRequest, 'processing request');
-        const logContext: Record<string, any> = {
-            requestId: originalRequest.id,
-        };
-        const mockEntry: WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'> = {
-            originalRequest,
-            modifiedRequest: {
-                ...this.unproxyRequest(req),
-                id: requestUuid,
-                timestamp,
-                ...(originalRequest.body && { gqlBody: naiveGQLParser(originalRequest.body) }),
-            },
-        };
-        if (!isProxiedHostname) {
-            this.removeProxyPort(mockEntry.modifiedRequest);
-        }
-        const matchingRule = await getRuleExecutor(this.mockUuid).findMatchingRule(mockEntry.modifiedRequest);
-        if (matchingRule) {
-            mockEntry.mockRuleId = matchingRule.id;
-            mockEntry.labels = matchingRule.labels;
-            if (matchingRule.actions?.mockResponse) {
-                const staticResponse =
-                    typeof matchingRule.actions.mockResponse === 'function'
-                        ? matchingRule.actions.mockResponse(mockEntry.modifiedRequest)
-                        : matchingRule.actions.mockResponse;
-                mockEntry.modifiedResponse = staticResponse;
-                logger.debug({ ...logContext, staticResponse }, 'replying with mocked response');
-                if (matchingRule.storeTraffic) {
-                    this.trafficStore.set(requestUuid, mockEntry);
-                }
-                if (staticResponse.rawHeaders) {
-                    for (const header of staticResponse.rawHeaders.toHeaderPairs()) {
-                        res.setHeader(header[0], header[1]);
-                    }
-                }
-                res.status(staticResponse.status || 200);
-                res.send(staticResponse.body);
-                // static response blocks any further processing
-                return;
-            }
-            if (matchingRule.actions?.modifyRequest) {
-                mockEntry.modifiedRequest = matchingRule.actions?.modifyRequest(mockEntry.modifiedRequest);
-                logger.debug({ ...logContext, modifiedRequest: mockEntry.modifiedRequest }, 'modified original request');
-            }
-        }
-        if (this.ipUtils && !isProxiedHostname && !this.ipUtils.isIP(originalHostname)) {
-            const hostname = originalHostname.split(':')[0];
-            try {
-                const internalIPs = await this.ipUtils.resolveIP(hostname);
-                if (this.ipUtils.isLocalhostIP(internalIPs) && this.options.mock.externalDns.length) {
-                    const externalIPs = await this.ipUtils.resolveIP(hostname, { useExternalDns: true });
-                    logger.debug({ ...logContext, hostname, externalIPs, internalIPs }, 'switched to external IP');
-                    mockEntry.modifiedRequest.url = mockEntry.modifiedRequest.url.replace(
-                        /^(https?:\/\/)[^:/]+/i,
-                        `$1${externalIPs}`
-                    );
-                }
-            } catch (error) {
-                // swallow the exeception, don't think much can be done at this point
-                logger.warn({ ...logContext, error }, `error trying to resolve IP for "${hostname}"`);
-            }
-        }
-
-        const originalResponse = await this.proxyRequest(req, mockEntry, logContext);
-
-        logger.debug({ ...logContext, originalResponse }, 'received response');
-        mockEntry.originalResponse = originalResponse;
-        let modifedResponse: Stuntman.Response = {
-            ...originalResponse,
-            rawHeaders: new RawHeaders(
-                ...Array.from(originalResponse.rawHeaders.toHeaderPairs()).flatMap(([key, value]) => {
-                    // TODO this replace may be too aggressive and doesn't handle protocol (won't be necessary with a trusted cert and mock serving http+https)
-                    return [
-                        key,
-                        isProxiedHostname
-                            ? value
-                            : value.replace(
-                                  new RegExp(`(?:^|\\b)(${unproxiedHostname.replace('.', '\\.')})(?:\\b|$)`, 'igm'),
-                                  originalHostname
-                              ),
-                    ];
-                })
-            ),
-        };
-        if (matchingRule?.actions?.modifyResponse) {
-            modifedResponse = matchingRule?.actions?.modifyResponse(mockEntry.modifiedRequest, originalResponse);
-            logger.debug({ ...logContext, modifedResponse }, 'modified response');
-        }
-
-        mockEntry.modifiedResponse = modifedResponse;
-        if (matchingRule?.storeTraffic) {
-            this.trafficStore.set(requestUuid, mockEntry);
-        }
-
-        if (modifedResponse.status) {
-            res.status(modifedResponse.status);
-        }
-        if (modifedResponse.rawHeaders) {
-            for (const header of modifedResponse.rawHeaders.toHeaderPairs()) {
-                // since fetch decompresses responses we need to get rid of some headers
-                // TODO maybe could be handled better than just skipping, although express should add these back for new body
-                // if (/^content-(?:length|encoding)$/i.test(header[0])) {
-                //     continue;
-                // }
-                res.setHeader(header[0], isProxiedHostname ? header[1].replace(unproxiedHostname, originalHostname) : header[1]);
-            }
-        }
-        res.end(Buffer.from(modifedResponse.body, 'binary'));
     }
 
     public start() {
