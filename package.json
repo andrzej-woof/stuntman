@@ -11,7 +11,7 @@
   "homepage": "https://github.com/andrzej-woof/stuntman#readme",
   "scripts": {
     "start:example": "pnpm --filter @stuntman/example start",
-    "test:example": "pnpm --filter @stuntman/example test",
+    "test:example": "pnpm --filter @stuntman/example test:example",
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "pnpm -r clean",
     "build": "pnpm -r build",
