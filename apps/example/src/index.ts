@@ -104,6 +104,8 @@ exampleApp.post('/signup', async (req: express.Request<null, any, { email: strin
         // letting 3rd party know user came from referral
         const hitResponse = await postHit(req.session.uniqueId, req.body.email);
         if (!/^hit/.test(hitResponse.title)) {
+            // eslint-disable-next-line no-console
+            console.warn('hitResponse', hitResponse);
             res.status(500).send('something went wrong');
             return;
         }
@@ -112,12 +114,7 @@ exampleApp.post('/signup', async (req: express.Request<null, any, { email: strin
 });
 
 const mock = new StuntmanMock(serverConfig);
-mock.ruleExecutor.addRule({
-    id: 'pass-through',
-    matches: () => true,
-    ttlSeconds: 60000,
-    priority: DEFAULT_RULE_PRIORITY + 1, // higher value -> lower priority
-});
+// NOTE: mock will automatically load and compile rules from ./rules directory
 
 mock.start();
 
