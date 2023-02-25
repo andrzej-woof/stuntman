@@ -179,9 +179,9 @@ export class Mock {
                     logger.warn({ ...logContext, error }, `error trying to resolve IP for "${hostname}"`);
                 }
             }
-    
+
             const originalResponse = await this.proxyRequest(req, mockEntry, logContext);
-    
+
             logger.debug({ ...logContext, originalResponse }, 'received response');
             mockEntry.originalResponse = originalResponse;
             let modifedResponse: Stuntman.Response = {
@@ -205,12 +205,12 @@ export class Mock {
                 modifedResponse = matchingRule?.actions?.modifyResponse(mockEntry.modifiedRequest, originalResponse);
                 logger.debug({ ...logContext, modifedResponse }, 'modified response');
             }
-    
+
             mockEntry.modifiedResponse = modifedResponse;
             if (matchingRule?.storeTraffic) {
                 this.trafficStore.set(requestUuid, mockEntry);
             }
-    
+
             if (modifedResponse.status) {
                 res.status(modifedResponse.status);
             }
@@ -221,11 +221,14 @@ export class Mock {
                     // if (/^content-(?:length|encoding)$/i.test(header[0])) {
                     //     continue;
                     // }
-                    res.setHeader(header[0], isProxiedHostname ? header[1].replace(unproxiedHostname, originalHostname) : header[1]);
+                    res.setHeader(
+                        header[0],
+                        isProxiedHostname ? header[1].replace(unproxiedHostname, originalHostname) : header[1]
+                    );
                 }
             }
             res.end(Buffer.from(modifedResponse.body, 'binary'));
-        };    
+        };
 
         this.mockApp = express();
         // TODO for now request body is just a buffer passed further, not inflated
