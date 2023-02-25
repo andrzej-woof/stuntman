@@ -1,7 +1,7 @@
 import AwaitLock from 'await-lock';
 import { AppError, DEFAULT_RULE_PRIORITY, HttpCode, logger } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
-import { DEFAULT_RULES } from './rules';
+import { CUSTOM_RULES, DEFAULT_RULES } from './rules';
 
 const ruleExecutors: Record<string, RuleExecutor> = {};
 
@@ -103,6 +103,7 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
     enableRule(ruleOrId: string | Stuntman.Rule): void {
         this._rules.forEach((r) => {
             if (r.id === (typeof ruleOrId === 'string' ? ruleOrId : ruleOrId.id)) {
+                r.counter = 0;
                 r.isEnabled = true;
                 logger.debug({ ruleId: r.id }, 'rule enabled');
             }
@@ -153,6 +154,7 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
             matchingRule.counter = 0;
             logger.warn(logContext, "it's over 9000!!!");
         }
+        // TODO check if that works
         if (matchingRule.disableAfterUse) {
             if (typeof matchingRule.disableAfterUse === 'boolean' || matchingRule.disableAfterUse <= matchingRule.counter) {
                 logger.debug(logContext, 'disabling rule for future requests');
@@ -162,7 +164,7 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
         if (matchingRule.removeAfterUse) {
             if (typeof matchingRule.removeAfterUse === 'boolean' || matchingRule.removeAfterUse <= matchingRule.counter) {
                 logger.debug(logContext, 'removing rule for future requests');
-                this.removeRule(matchingRule);
+                await this.removeRule(matchingRule);
             }
         }
         if (typeof matchResult !== 'boolean') {
@@ -201,7 +203,9 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
 
 export const getRuleExecutor = (mockUuid: string): RuleExecutor => {
     if (!ruleExecutors[mockUuid]) {
-        ruleExecutors[mockUuid] = new RuleExecutor(DEFAULT_RULES.map((r) => ({ ...r, ttlSeconds: Infinity })));
+        ruleExecutors[mockUuid] = new RuleExecutor(
+            [...DEFAULT_RULES, ...CUSTOM_RULES].map((r) => ({ ...r, ttlSeconds: Infinity }))
+        );
     }
     return ruleExecutors[mockUuid];
 };

@@ -1,7 +1,7 @@
 import serializeJavascript from 'serialize-javascript';
 import type * as Stuntman from '@stuntman/shared';
 import { logger } from '@stuntman/shared';
-import { validateSerializedRuleProperties } from './validatiors';
+import { validateSerializedRuleProperties } from './validators';
 
 // TODO
 export const deserializeRule = (serializedRule: Stuntman.SerializedRule): Stuntman.Rule => {

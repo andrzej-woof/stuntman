@@ -1,5 +1,4 @@
 import {
-    RecursivePartial,
     ServerConfig,
     DEFAULT_API_PORT,
     DEFAULT_MOCK_DOMAIN,
@@ -11,7 +10,7 @@ import {
     DEFAULT_CACHE_TTL,
 } from '.';
 import config from 'config';
-import defaults from 'defaults';
+import path from 'path';
 
 // TODO safeguards & defaults
 
@@ -19,12 +18,15 @@ const defaultConfig: ServerConfig = {
     api: {
         disabled: false,
         port: DEFAULT_API_PORT,
+        apiKeyReadOnly: null,
+        apiKeyReadWrite: null,
     },
     mock: {
         domain: DEFAULT_MOCK_DOMAIN,
         externalDns: EXTERNAL_DNS,
         port: DEFAULT_MOCK_PORT,
         timeout: DEFAULT_PROXY_TIMEOUT,
+        rulesPath: path.join(process.cwd(), 'rules'),
     },
     storage: {
         traffic: {
@@ -38,12 +40,14 @@ const defaultConfig: ServerConfig = {
     },
 };
 
-let configFromFile: RecursivePartial<ServerConfig> = {};
+config.util.setModuleDefaults('stuntman', defaultConfig);
+
+let configFromFile = {} as ServerConfig;
 try {
-    configFromFile = config.get<RecursivePartial<ServerConfig>>('stuntman');
+    configFromFile = config.get<ServerConfig>('stuntman');
 } catch (error) {
     // eslint-disable-next-line no-console
     console.warn('unable to find correct config - starting with defaults');
 }
 
-export const serverConfig = defaults(configFromFile, defaultConfig) as ServerConfig;
+export const serverConfig = configFromFile;

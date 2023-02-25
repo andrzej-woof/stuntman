@@ -166,6 +166,8 @@ export type WebGuiConfig = {
 export type ApiConfig = {
     port: number;
     disabled: boolean;
+    apiKeyReadWrite: string | null;
+    apiKeyReadOnly: string | null;
 };
 
 export type ClientConfig = {
@@ -183,6 +185,7 @@ export type MockConfig = {
     httpsCert?: string;
     timeout: number;
     externalDns: string[];
+    rulesPath: string;
 };
 
 export type StorageConfig = {

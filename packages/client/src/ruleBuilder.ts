@@ -58,7 +58,10 @@ class RuleBuilderBaseBase {
                         const [rawKey, ...rest] = path.split('.');
                         const key = rawKey.replace(arrayIndexerRegex, '');
                         const shouldBeArray = arrayIndexerRegex.test(rawKey);
-                        const arrayIndex = Number(arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex);
+                        const arrayIndex =
+                            (arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex || '').length > 0
+                                ? Number(arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex)
+                                : Number.NaN;
                         const actualValue = key ? obj[key] : obj;
                         const currentPath = `${parentPath ? `${parentPath}.` : ''}${rawKey}`;
                         if (value === undefined && actualValue === undefined) {
@@ -68,7 +71,7 @@ class RuleBuilderBaseBase {
                             if (
                                 shouldBeArray &&
                                 (!Array.isArray(actualValue) ||
-                                    !(!Number.isInteger(arrayIndex) && actualValue.length > Number(arrayIndex)))
+                                    (Number.isInteger(arrayIndex) && actualValue.length <= Number(arrayIndex)))
                             ) {
                                 return { result: false, description: `${currentPath} empty array` };
                             }
@@ -87,8 +90,8 @@ class RuleBuilderBaseBase {
                             if (Number.isInteger(arrayIndex)) {
                                 return matchObject(actualValue[Number(arrayIndex)], rest.join('.'), value, currentPath);
                             }
-                            const hasArrayMatch = (actualValue as Array<any>).some((arrayValue) =>
-                                matchObject(arrayValue, rest.join('.'), value, currentPath)
+                            const hasArrayMatch = (actualValue as Array<any>).some(
+                                (arrayValue) => matchObject(arrayValue, rest.join('.'), value, currentPath).result
                             );
                             return { result: hasArrayMatch, description: `array match ${currentPath}` };
                         }
@@ -138,6 +141,23 @@ class RuleBuilderBaseBase {
                             } doesn't match ${matchBuilderVariables.pathname?.toString()}`,
                         };
                     }
+                    if (matchBuilderVariables.port) {
+                        const port =
+                            ___url.port && ___url.port !== '' ? ___url.port : ___url.protocol === 'https:' ? '443' : '80';
+                        if (
+                            !___matchesValue(
+                                matchBuilderVariables.port instanceof RegExp
+                                    ? matchBuilderVariables.port
+                                    : `${matchBuilderVariables.port}`,
+                                port
+                            )
+                        ) {
+                            return {
+                                result: false,
+                                description: `port ${port} doesn't match ${matchBuilderVariables.port?.toString()}`,
+                            };
+                        }
+                    }
                     if (matchBuilderVariables.searchParams) {
                         for (const searchParamMatcher of matchBuilderVariables.searchParams) {
                             if (typeof searchParamMatcher === 'string') {
@@ -172,11 +192,17 @@ class RuleBuilderBaseBase {
                         for (const headerMatcher of matchBuilderVariables.headers) {
                             if (typeof headerMatcher === 'string') {
                                 const result = ___headers.has(headerMatcher);
-                                return { result, description: `headers.has("${headerMatcher}")` };
+                                if (result) {
+                                    continue;
+                                }
+                                return { result: false, description: `headers.has("${headerMatcher}")` };
                             }
                             if (headerMatcher instanceof RegExp) {
                                 const result = ___headers.toHeaderPairs().some(([key]) => headerMatcher.test(key));
-                                return { result, description: `headers.keys matches ${headerMatcher.toString()}` };
+                                if (result) {
+                                    continue;
+                                }
+                                return { result: false, description: `headers.keys matches ${headerMatcher.toString()}` };
                             }
                             if (!___headers.has(headerMatcher.key)) {
                                 return { result: false, description: `headers.has("${headerMatcher.key}")` };
@@ -186,7 +212,7 @@ class RuleBuilderBaseBase {
                                 if (value === null) {
                                     return { result: false, description: `headers.get("${headerMatcher.key}") === null` };
                                 }
-                                if (!___matchesValue(headerMatcher.value, value as string)) {
+                                if (!___matchesValue(headerMatcher.value, value)) {
                                     return {
                                         result: false,
                                         description: `headerMatcher.get("${headerMatcher.key}") = "${headerMatcher.value}"`,
@@ -229,7 +255,8 @@ class RuleBuilderBaseBase {
                         for (const jsonMatcher of Array.isArray(matchBuilderVariables.bodyJson)
                             ? matchBuilderVariables.bodyJson
                             : [matchBuilderVariables.bodyJson]) {
-                            if (!matchObject(json, jsonMatcher.key, jsonMatcher.value)) {
+                            const matchObjectResult = matchObject(json, jsonMatcher.key, jsonMatcher.value);
+                            if (!matchObjectResult.result) {
                                 return { result: false, description: `$.${jsonMatcher.key} != "${jsonMatcher.value}"` };
                             }
                         }
@@ -287,6 +314,9 @@ class RuleBuilderBaseBase {
 
 class RuleBuilderBase extends RuleBuilderBaseBase {
     limitedUse(hitCount: number) {
+        if (this.rule.removeAfterUse) {
+            throw new Error(`limit already set at ${this.rule.removeAfterUse}`);
+        }
         if (Number.isNaN(hitCount) || !Number.isFinite(hitCount) || !Number.isInteger(hitCount) || hitCount <= 0) {
             throw new Error('Invalid hitCount');
         }
@@ -310,6 +340,9 @@ class RuleBuilderBase extends RuleBuilderBaseBase {
 
 class RuleBuilder extends RuleBuilderBase {
     raisePriority(by?: number) {
+        if (this.rule.priority !== DEFAULT_RULE_PRIORITY) {
+            throw new Error('you should not alter rule priority more than once');
+        }
         const subtract = by ?? 1;
         if (subtract >= DEFAULT_RULE_PRIORITY) {
             throw new Error(`Unable to raise priority over the default ${DEFAULT_RULE_PRIORITY}`);
@@ -319,6 +352,9 @@ class RuleBuilder extends RuleBuilderBase {
     }
 
     decreasePriority(by?: number) {
+        if (this.rule.priority !== DEFAULT_RULE_PRIORITY) {
+            throw new Error('you should not alter rule priority more than once');
+        }
         const add = by ?? 1;
         this.rule.priority = DEFAULT_RULE_PRIORITY + add;
         return this;
@@ -357,23 +393,37 @@ class RuleBuilder extends RuleBuilderBase {
         return new RuleBuilderInitialized(this.rule, this._matchBuilderVariables);
     }
 
+    onRequestToPort(port: string | number | RegExp): RuleBuilderInitialized {
+        this._matchBuilderVariables.port = port;
+        return new RuleBuilderInitialized(this.rule, this._matchBuilderVariables);
+    }
+
     onAnyRequest(): RuleBuilderInitialized {
-        return this.onRequestTo(/.*/);
+        return new RuleBuilderInitialized(this.rule, this._matchBuilderVariables);
     }
 }
 
 class RuleBuilderInitialized extends RuleBuilderBase {
     withHostname(hostname: string | RegExp) {
+        if (this._matchBuilderVariables.hostname) {
+            throw new Error('hostname already set');
+        }
         this._matchBuilderVariables.hostname = hostname;
         return this;
     }
 
     withPathname(pathname: string | RegExp) {
+        if (this._matchBuilderVariables.pathname) {
+            throw new Error('pathname already set');
+        }
         this._matchBuilderVariables.pathname = pathname;
         return this;
     }
 
     withPort(port: number | string | RegExp) {
+        if (this._matchBuilderVariables.port) {
+            throw new Error('port already set');
+        }
         this._matchBuilderVariables.port = port;
         return this;
     }
@@ -432,7 +482,7 @@ class RuleBuilderInitialized extends RuleBuilderBase {
         return this;
     }
 
-    withHeaders(headers: KeyValueMatcher[]): RuleBuilderInitialized {
+    withHeaders(...headers: KeyValueMatcher[]): RuleBuilderInitialized {
         if (!this._matchBuilderVariables.headers) {
             this._matchBuilderVariables.headers = [];
         }
@@ -449,11 +499,20 @@ class RuleBuilderInitialized extends RuleBuilderBase {
     withBodyText(includes: string): RuleBuilderInitialized;
     withBodyText(matches: RegExp): RuleBuilderInitialized;
     withBodyText(includesOrMatches: string | RegExp): RuleBuilderInitialized {
+        if (this._matchBuilderVariables.bodyText) {
+            throw new Error('bodyText already set');
+        }
+        if (this._matchBuilderVariables.bodyText === null) {
+            throw new Error('cannot use both withBodyText and withoutBody');
+        }
         this._matchBuilderVariables.bodyText = includesOrMatches;
         return this;
     }
 
     withoutBody(): RuleBuilderInitialized {
+        if (this._matchBuilderVariables.bodyText) {
+            throw new Error('cannot use both withBodyText and withoutBody');
+        }
         this._matchBuilderVariables.bodyText = null;
         return this;
     }
@@ -468,7 +527,7 @@ class RuleBuilderInitialized extends RuleBuilderBase {
         }
         if (typeof keyOrMatcher === 'string') {
             if (!keyRegex.test(keyOrMatcher)) {
-                throw new Error('invalid key');
+                throw new Error(`invalid key "${keyOrMatcher}"`);
             }
             this._matchBuilderVariables.bodyJson.push({ key: keyOrMatcher, value: withValue });
             return this;
@@ -477,7 +536,7 @@ class RuleBuilderInitialized extends RuleBuilderBase {
             throw new Error('invalid usage');
         }
         if (!keyRegex.test(keyOrMatcher.key)) {
-            throw new Error('invalid key');
+            throw new Error(`invalid key "${keyOrMatcher}"`);
         }
         this._matchBuilderVariables.bodyJson.push(keyOrMatcher);
         return this;
@@ -494,28 +553,67 @@ class RuleBuilderInitialized extends RuleBuilderBase {
 
     mockResponse(staticResponse: Stuntman.Response): Stuntman.SerializableRule;
     mockResponse(generationFunction: Stuntman.RemotableFunction<Stuntman.ResponseGenerationFn>): Stuntman.SerializableRule;
+    mockResponse(localFn: Stuntman.ResponseGenerationFn, localVariables?: Stuntman.LocalVariables): Stuntman.SerializableRule;
     mockResponse(
-        response: Stuntman.Response | Stuntman.RemotableFunction<Stuntman.ResponseGenerationFn>
+        response: Stuntman.Response | Stuntman.RemotableFunction<Stuntman.ResponseGenerationFn> | Stuntman.ResponseGenerationFn,
+        localVariables?: Stuntman.LocalVariables
     ): Stuntman.SerializableRule {
+        if (typeof response === 'function') {
+            this.rule.actions = { mockResponse: { localFn: response, localVariables: localVariables ?? {} } };
+            return this.rule;
+        }
+        if (localVariables) {
+            throw new Error('invalid call - localVariables cannot be used together with Response or RemotableFunction');
+        }
         this.rule.actions = { mockResponse: response };
         return this.rule;
     }
 
-    modifyRequest(modifyFunction: Stuntman.RemotableFunction<Stuntman.RequestManipulationFn>): RuleBuilderRequestInitialized {
+    modifyRequest(
+        modifyFunction: Stuntman.RequestManipulationFn | Stuntman.RemotableFunction<Stuntman.RequestManipulationFn>,
+        localVariables?: Stuntman.LocalVariables
+    ): RuleBuilderRequestInitialized {
+        if (typeof modifyFunction === 'function') {
+            this.rule.actions = { modifyRequest: { localFn: modifyFunction, localVariables: localVariables ?? {} } };
+            return new RuleBuilderRequestInitialized(this.rule, this._matchBuilderVariables);
+        }
+        if (localVariables) {
+            throw new Error('invalid call - localVariables cannot be used together with Response or RemotableFunction');
+        }
         this.rule.actions = { modifyRequest: modifyFunction };
         return new RuleBuilderRequestInitialized(this.rule, this._matchBuilderVariables);
     }
 
-    modifyResponse(modifyFunction: Stuntman.RemotableFunction<Stuntman.ResponseManipulationFn>): Stuntman.SerializableRule {
+    modifyResponse(
+        modifyFunction: Stuntman.ResponseManipulationFn | Stuntman.RemotableFunction<Stuntman.ResponseManipulationFn>,
+        localVariables?: Stuntman.LocalVariables
+    ): Stuntman.SerializableRule {
+        if (typeof modifyFunction === 'function') {
+            this.rule.actions = { modifyResponse: { localFn: modifyFunction, localVariables: localVariables ?? {} } };
+            return this.rule;
+        }
+        if (localVariables) {
+            throw new Error('invalid call - localVariables cannot be used together with Response or RemotableFunction');
+        }
         this.rule.actions = { modifyResponse: modifyFunction };
         return this.rule;
     }
 }
 
 class RuleBuilderRequestInitialized extends RuleBuilderBase {
-    modifyResponse(modifyFunction: Stuntman.RemotableFunction<Stuntman.ResponseManipulationFn>): Stuntman.SerializableRule {
+    modifyResponse(
+        modifyFunction: Stuntman.ResponseManipulationFn | Stuntman.RemotableFunction<Stuntman.ResponseManipulationFn>,
+        localVariables?: Stuntman.LocalVariables
+    ): Stuntman.SerializableRule {
         if (!this.rule.actions) {
             throw new Error('rule.actions not defined - builder implementation error');
+        }
+        if (typeof modifyFunction === 'function') {
+            this.rule.actions = { modifyResponse: { localFn: modifyFunction, localVariables: localVariables ?? {} } };
+            return this.rule;
+        }
+        if (localVariables) {
+            throw new Error('invalid call - localVariables cannot be used together with Response or RemotableFunction');
         }
         this.rule.actions.modifyResponse = modifyFunction;
         return this.rule;

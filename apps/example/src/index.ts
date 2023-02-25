@@ -81,6 +81,10 @@ const postHit = async (uniqueId: string, email: string) => {
     }
 };
 
+exampleApp.get('/', async (req: express.Request, res) => {
+    res.render('home', { uniqueId: uuidv4() });
+});
+
 exampleApp.get('/home', async (req: express.Request, res) => {
     res.render('home', { uniqueId: uuidv4() });
 });

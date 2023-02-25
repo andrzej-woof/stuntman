@@ -8,6 +8,7 @@ type ClientOptions = {
     host?: string;
     port?: number;
     timeout?: number;
+    apiKey?: string;
 };
 
 const SERIALIZE_JAVASCRIPT_OPTIONS: serializeJavascript.SerializeJSOptions = {
@@ -118,7 +119,14 @@ export class Client {
             controller.abort();
         }, this.options.timeout);
         try {
-            const response = await fetch(url, { ...init, signal: init?.signal ?? controller.signal });
+            const response = await fetch(url, {
+                ...init,
+                headers: {
+                    ...(this.options.apiKey && { 'x-api-key': this.options.apiKey }),
+                    ...init?.headers,
+                },
+                signal: init?.signal ?? controller.signal,
+            });
             if (!response.ok) {
                 const text = await response.text();
                 let json: any;

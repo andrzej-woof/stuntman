@@ -2,7 +2,7 @@
     "compilerOptions": {
         "target": "ES2018",
         "module": "commonjs",
-        "rootDir": ".",
+        "rootDir": "src",
         "declaration": true,
         "outDir": "dist",
         "esModuleInterop": true,
@@ -11,6 +11,12 @@
         "skipLibCheck": true,
         "typeRoots": ["node_modules/@types"],
         "allowJs": true,
-        "moduleResolution": "node16"
-    }
+        "moduleResolution": "node16",
+        "types": ["node", "jest"]
+    },
+    "exclude": [
+        "jest.config.js",
+        "./dist/**",
+        "./test/**"
+    ]
 }
