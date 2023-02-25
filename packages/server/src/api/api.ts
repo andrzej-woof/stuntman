@@ -39,6 +39,9 @@ export class API {
         this.apiApp.use(express.text());
 
         this.auth = (req: Request, type: 'read' | 'write'): void => {
+            if (!this.options.apiKeyReadOnly && !this.options.apiKeyReadWrite) {
+                return;
+            }
             const hasValidReadKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadOnly;
             const hasValidWriteKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadWrite;
             const hasValidKey = type === 'read' ? hasValidReadKey || hasValidWriteKey : hasValidWriteKey;
@@ -135,7 +138,7 @@ export class API {
                 });
                 return;
             }
-            logger.error({ ...error, uuid }, 'Unexpected error');
+            logger.error({ message: error.message, stack: error.stack, name: error.name, uuid }, 'unexpected error');
             if (res) {
                 res.status(HttpCode.INTERNAL_SERVER_ERROR).json({
                     error: { message: error.message, httpCode: HttpCode.INTERNAL_SERVER_ERROR, uuid },
