@@ -186,6 +186,7 @@ export type MockConfig = {
     timeout: number;
     externalDns: string[];
     rulesPath: string;
+    disableProxy?: boolean;
 };
 
 export type StorageConfig = {

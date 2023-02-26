@@ -180,7 +180,14 @@ export class Mock {
                 }
             }
 
-            const originalResponse = await this.proxyRequest(req, mockEntry, logContext);
+            const originalResponse: Required<Stuntman.Response> = this.options.mock.disableProxy
+                ? {
+                      timestamp: Date.now(),
+                      body: undefined,
+                      rawHeaders: new RawHeaders(),
+                      status: 404,
+                  }
+                : await this.proxyRequest(req, mockEntry, logContext);
 
             logger.debug({ ...logContext, originalResponse }, 'received response');
             mockEntry.originalResponse = originalResponse;
