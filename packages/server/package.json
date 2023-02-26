@@ -1,6 +1,6 @@
 {
   "name": "@stuntman/server",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Stuntman - HTTP proxy / mock server with API",
   "main": "dist/index.js",
   "repository": {
@@ -67,7 +67,8 @@
     "stuntman": "./dist/bin/stuntman.js"
   },
   "files": [
-    "dist/",
+    "src/**",
+    "dist/**",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"

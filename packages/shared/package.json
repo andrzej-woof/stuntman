@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/shared",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "Stuntman - HTTP proxy / mock shared types and utils",
     "main": "dist/index.js",
     "repository": {
@@ -44,5 +44,12 @@
     },
     "devDependencies": {
         "@types/config": "3.3.0"
-    }
+    },
+    "files": [
+        "src/**",
+        "dist/**",
+        "README.md",
+        "LICENSE",
+        "CHANGELOG.md"
+    ]
 }

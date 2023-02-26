@@ -1,6 +1,6 @@
 {
   "name": "@stuntman/client",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Stuntman - HTTP proxy / mock API client",
   "main": "dist/index.js",
   "repository": {
@@ -52,7 +52,8 @@
     "typescript": "4.9.5"
   },
   "files": [
-    "dist/",
+    "src/**",
+    "dist/**",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"

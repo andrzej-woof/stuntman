@@ -241,7 +241,7 @@ export class Mock {
 
         this.mockApp.all(/.*/, this.requestHandler);
 
-        this.mockApp.use((error: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+        this.mockApp.use((error: Error, req: express.Request, res: express.Response) => {
             const ctx: RequestContext | null = RequestContext.get(req);
             const uuid = ctx?.uuid || uuidv4();
             logger.error({ message: error.message, stack: error.stack, name: error.name, uuid }, 'unexpected error');
