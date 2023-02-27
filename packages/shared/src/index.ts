@@ -124,8 +124,13 @@ export type Actions =
       }
     | {
           mockResponse?: undefined;
-          modifyRequest?: RequestManipulationFn;
+          modifyRequest: RequestManipulationFn;
           modifyResponse?: ResponseManipulationFn;
+      }
+    | {
+          mockResponse?: undefined;
+          modifyRequest?: RequestManipulationFn;
+          modifyResponse: ResponseManipulationFn;
       };
 
 export type Rule = {
@@ -133,7 +138,7 @@ export type Rule = {
     priority?: number;
     matches: RuleMatchFunction; // function for picking request to process
     labels?: string[]; // groupping req/res pairs for searching later e.g. ['exoclick', 'testId123']
-    actions?: Actions;
+    actions: Actions;
     disableAfterUse?: boolean | number; // disable after rule is triggered n-times
     removeAfterUse?: boolean | number; // disable after rule is triggered n-times
     ttlSeconds: number;

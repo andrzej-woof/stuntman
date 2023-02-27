@@ -120,6 +120,8 @@ html
                                                 body: ruleFunctionText + '\n return STUNTMAN_RULE;',
                                             }).then((response) => {
                                                 if (response.ok) {
+                                                    const newUrl = `${window.location.protocol}//${window.location.host}${window.location.pathname}?ruleId=${encodeURIComponent(newId)}`;
+                                                    window.history.pushState({ path: newUrl }, '', newUrl);
                                                     window.location.reload();
                                                     return;
                                                 }
@@ -133,7 +135,7 @@ html
 
                             window.newRule = () => {
                                 const ruleId = uuidv4();
-                                const emptyRule = `import type * as Stuntman from \'stuntman\';\n\nvar STUNTMAN_RULE: Stuntman.Rule = { id: '${ruleId}', matches: (req: Stuntman.Request) => true, ttlSeconds: 600 };`;
+                                const emptyRule = `import type * as Stuntman from \'stuntman\';\n\nvar STUNTMAN_RULE: Stuntman.Rule = { id: '${ruleId}', matches: (req: Stuntman.Request) => true, ttlSeconds: 600, actions: { mockResponse: { status: '200', body: '${ruleId}' }} };`;
                                 models[ruleId] = monaco.editor.createModel(emptyRule, 'typescript', `file:///${ruleId}.ts`);
                                 const ruleKeyNode = document.getElementById('ruleKeys').firstChild;
                                 const ruleKeyNodeClone = ruleKeyNode.cloneNode(true);

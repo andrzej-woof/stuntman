@@ -103,9 +103,9 @@ export class API {
         });
 
         this.apiApp.get('/traffic', this.authReadOnly, (req, res) => {
-            const serializedTraffic: Record<string, Stuntman.LogEntry> = {};
-            for (const [key, value] of this.trafficStore.entries()) {
-                serializedTraffic[key] = value;
+            const serializedTraffic: Stuntman.LogEntry[] = [];
+            for (const value of this.trafficStore.values()) {
+                serializedTraffic.push(value);
             }
             res.json(serializedTraffic);
         });
@@ -190,13 +190,7 @@ export class API {
                     id: rule.id,
                     matches: rule.matches,
                     ttlSeconds: rule.ttlSeconds,
-                    ...(rule.actions && {
-                        actions: {
-                            ...(rule.actions.mockResponse
-                                ? { mockResponse: rule.actions.mockResponse }
-                                : { modifyRequest: rule.actions.modifyRequest, modifyResponse: rule.actions.modifyResponse }),
-                        },
-                    }),
+                    actions: rule.actions,
                     ...(rule.disableAfterUse !== undefined && { disableAfterUse: rule.disableAfterUse }),
                     ...(rule.isEnabled !== undefined && { isEnabled: rule.isEnabled }),
                     ...(rule.labels !== undefined && { labels: rule.labels }),

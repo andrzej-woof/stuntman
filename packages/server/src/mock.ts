@@ -137,7 +137,7 @@ export class Mock {
             if (matchingRule) {
                 mockEntry.mockRuleId = matchingRule.id;
                 mockEntry.labels = matchingRule.labels;
-                if (matchingRule.actions?.mockResponse) {
+                if (matchingRule.actions.mockResponse) {
                     const staticResponse =
                         typeof matchingRule.actions.mockResponse === 'function'
                             ? matchingRule.actions.mockResponse(mockEntry.modifiedRequest)
@@ -157,8 +157,8 @@ export class Mock {
                     // static response blocks any further processing
                     return;
                 }
-                if (matchingRule.actions?.modifyRequest) {
-                    mockEntry.modifiedRequest = matchingRule.actions?.modifyRequest(mockEntry.modifiedRequest);
+                if (matchingRule.actions.modifyRequest) {
+                    mockEntry.modifiedRequest = matchingRule.actions.modifyRequest(mockEntry.modifiedRequest);
                     logger.debug({ ...logContext, modifiedRequest: mockEntry.modifiedRequest }, 'modified original request');
                 }
             }
@@ -208,8 +208,8 @@ export class Mock {
                     })
                 ),
             };
-            if (matchingRule?.actions?.modifyResponse) {
-                modifedResponse = matchingRule?.actions?.modifyResponse(mockEntry.modifiedRequest, originalResponse);
+            if (matchingRule?.actions.modifyResponse) {
+                modifedResponse = matchingRule?.actions.modifyResponse(mockEntry.modifiedRequest, originalResponse);
                 logger.debug({ ...logContext, modifedResponse }, 'modified response');
             }
 

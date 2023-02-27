@@ -413,7 +413,7 @@ describe('rule initialized', () => {
             const builder = ruleBuilder().onAnyRequest();
             expect(builder['rule'].actions).toBeUndefined();
             builder.mockResponse({});
-            expect(builder['rule'].actions?.mockResponse).toEqual({});
+            expect(builder['rule'].actions.mockResponse).toEqual({});
         });
 
         test('dynamic', () => {
@@ -424,11 +424,11 @@ describe('rule initialized', () => {
                     body: request,
                 };
             });
-            expect(builder['rule'].actions?.mockResponse).toHaveProperty('localFn');
-            expect(builder['rule'].actions?.mockResponse).toHaveProperty('localVariables');
+            expect(builder['rule'].actions.mockResponse).toHaveProperty('localFn');
+            expect(builder['rule'].actions.mockResponse).toHaveProperty('localVariables');
             expect(
                 callRemotableFunction(
-                    builder['rule'].actions?.mockResponse as Stuntman.RemotableFunction<Stuntman.ResponseGenerationFn>,
+                    builder['rule'].actions.mockResponse as Stuntman.RemotableFunction<Stuntman.ResponseGenerationFn>,
                     matchingRequest
                 )
             ).toEqual({ status: 201, body: matchingRequest });
@@ -443,11 +443,11 @@ describe('rule initialized', () => {
                 body: request,
             };
         });
-        expect(builder['rule'].actions?.modifyRequest).toHaveProperty('localFn');
-        expect(builder['rule'].actions?.modifyRequest).toHaveProperty('localVariables');
+        expect(builder['rule'].actions.modifyRequest).toHaveProperty('localFn');
+        expect(builder['rule'].actions.modifyRequest).toHaveProperty('localVariables');
         expect(
             callRemotableFunction(
-                builder['rule'].actions?.modifyRequest as Stuntman.RemotableFunction<Stuntman.RequestManipulationFn>,
+                builder['rule'].actions.modifyRequest as Stuntman.RemotableFunction<Stuntman.RequestManipulationFn>,
                 matchingRequest
             )
         ).toEqual({ ...matchingRequest, body: matchingRequest });
@@ -464,11 +464,11 @@ describe('rule initialized', () => {
                 },
             };
         });
-        expect(builder['rule'].actions?.modifyResponse).toHaveProperty('localFn');
-        expect(builder['rule'].actions?.modifyResponse).toHaveProperty('localVariables');
+        expect(builder['rule'].actions.modifyResponse).toHaveProperty('localFn');
+        expect(builder['rule'].actions.modifyResponse).toHaveProperty('localVariables');
         expect(
             callRemotableFunction(
-                builder['rule'].actions?.modifyResponse as Stuntman.RemotableFunction<Stuntman.ResponseManipulationFn>,
+                builder['rule'].actions.modifyResponse as Stuntman.RemotableFunction<Stuntman.ResponseManipulationFn>,
                 matchingRequest,
                 receivedResponse
             )

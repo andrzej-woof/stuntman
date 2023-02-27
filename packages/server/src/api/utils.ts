@@ -11,6 +11,7 @@ export const deserializeRule = (serializedRule: Stuntman.SerializedRule): Stuntm
         id: serializedRule.id,
         matches: (req: Stuntman.Request) => new Function('____arg0', serializedRule.matches.remoteFn)(req),
         ttlSeconds: serializedRule.ttlSeconds,
+        actions: { mockResponse: { status: 200 } },
         ...(serializedRule.disableAfterUse !== undefined && { disableAfterUse: serializedRule.disableAfterUse }),
         ...(serializedRule.removeAfterUse !== undefined && { removeAfterUse: serializedRule.removeAfterUse }),
         ...(serializedRule.labels !== undefined && { labels: serializedRule.labels }),
@@ -18,37 +19,36 @@ export const deserializeRule = (serializedRule: Stuntman.SerializedRule): Stuntm
         ...(serializedRule.isEnabled !== undefined && { isEnabled: serializedRule.isEnabled }),
         ...(serializedRule.storeTraffic !== undefined && { storeTraffic: serializedRule.storeTraffic }),
     };
-    if (serializedRule.actions) {
-        // TODO store the original localFn and variables sent from client for web UI editing maybe
-        if (serializedRule.actions.mockResponse) {
-            rule.actions = {
-                mockResponse:
-                    'remoteFn' in serializedRule.actions.mockResponse
-                        ? (req: Stuntman.Request) =>
-                              new Function(
-                                  '____arg0',
-                                  (serializedRule.actions?.mockResponse as Stuntman.SerializedRemotableFunction).remoteFn
-                              )(req)
-                        : serializedRule.actions.mockResponse,
-            };
-        } else {
-            rule.actions = {};
-            if (serializedRule.actions.modifyRequest) {
-                rule.actions.modifyRequest = (req: Stuntman.Request) =>
+    // TODO store the original localFn and variables sent from client for web UI editing maybe
+    if (serializedRule.actions.mockResponse) {
+        rule.actions = {
+            mockResponse:
+                'remoteFn' in serializedRule.actions.mockResponse
+                    ? (req: Stuntman.Request) =>
+                          new Function(
+                              '____arg0',
+                              (serializedRule.actions.mockResponse as Stuntman.SerializedRemotableFunction).remoteFn
+                          )(req)
+                    : serializedRule.actions.mockResponse,
+        };
+    } else {
+        rule.actions = {
+            ...(serializedRule.actions.modifyRequest && {
+                modifyRequest: ((req: Stuntman.Request) =>
                     new Function(
                         '____arg0',
-                        (serializedRule.actions?.modifyRequest as Stuntman.SerializedRemotableFunction).remoteFn
-                    )(req);
-            }
-            if (serializedRule.actions.modifyResponse) {
-                rule.actions.modifyResponse = (req: Stuntman.Request, res: Stuntman.Response) =>
+                        (serializedRule.actions.modifyRequest as Stuntman.SerializedRemotableFunction).remoteFn
+                    )(req)) as Stuntman.RequestManipulationFn,
+            }),
+            ...(serializedRule.actions.modifyResponse && {
+                modifyResponse: ((req: Stuntman.Request, res: Stuntman.Response) =>
                     new Function(
                         '____arg0',
                         '____arg1',
-                        (serializedRule.actions?.modifyResponse as Stuntman.SerializedRemotableFunction).remoteFn
-                    )(req, res);
-            }
-        }
+                        (serializedRule.actions.modifyResponse as Stuntman.SerializedRemotableFunction).remoteFn
+                    )(req, res)) as Stuntman.ResponseManipulationFn,
+            }),
+        } as Stuntman.Actions;
     }
     logger.debug(rule, 'deserialized rule');
     return rule;

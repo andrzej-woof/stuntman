@@ -179,11 +179,11 @@ export class Client {
     }
 
     // TODO improve filtering by timestamp from - to, multiple labels, etc.
-    async getTraffic(rule: Stuntman.Rule): Promise<Record<string, Stuntman.LogEntry>>;
-    async getTraffic(ruleIdOrLabel: string): Promise<Record<string, Stuntman.LogEntry>>;
-    async getTraffic(ruleOrIdOrLabel: string | Stuntman.Rule): Promise<Record<string, Stuntman.LogEntry>> {
+    async getTraffic(rule: Stuntman.Rule): Promise<Stuntman.LogEntry[]>;
+    async getTraffic(ruleIdOrLabel: string): Promise<Stuntman.LogEntry[]>;
+    async getTraffic(ruleOrIdOrLabel: string | Stuntman.Rule): Promise<Stuntman.LogEntry[]> {
         const ruleId = typeof ruleOrIdOrLabel === 'object' ? ruleOrIdOrLabel.id : ruleOrIdOrLabel;
         const response = await this.fetch(`${this.baseUrl}/traffic${ruleId ? `/${encodeURIComponent(ruleId)}` : ''}`);
-        return response.json() as unknown as Record<string, Stuntman.LogEntry>;
+        return response.json() as unknown as Stuntman.LogEntry[];
     }
 }
