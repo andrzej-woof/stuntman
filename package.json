@@ -17,7 +17,7 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "lint:fix": "pnpm -r lint:fix",
-    "prepublish": "pnpm clean && pnpm lint:fix && pnpm build && pnpm test && pnpm test:example"
+    "prepublishOnly": "pnpm clean && pnpm lint:fix && pnpm build && pnpm test && pnpm test:example"
   },
   "keywords": [
     "proxy",
