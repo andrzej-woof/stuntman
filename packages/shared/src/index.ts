@@ -53,7 +53,7 @@ export type RemotableFunction<T extends Function> = {
 
 export type SerializedRemotableFunction = {
     localFn: string;
-    variable?: string;
+    localVariables?: string;
     remoteFn: string;
 };
 
