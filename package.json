@@ -1,6 +1,6 @@
 {
   "name": "@stuntman/stuntman",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Stuntman - HTTP proxy / mock with API and client libraries",
   "private": true,
   "main": "index.js",
@@ -12,11 +12,12 @@
   "scripts": {
     "start:example": "pnpm --filter @stuntman/example start",
     "test:example": "pnpm --filter @stuntman/example test:example",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "pnpm -r test",
     "clean": "pnpm -r clean",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
-    "lint:fix": "pnpm -r lint:fix"
+    "lint:fix": "pnpm -r lint:fix",
+    "prepublish": "pnpm clean && pnpm lint:fix && pnpm build && pnpm test && pnpm test:example"
   },
   "keywords": [
     "proxy",

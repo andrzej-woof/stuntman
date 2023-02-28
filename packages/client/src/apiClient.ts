@@ -135,7 +135,7 @@ export class Client {
                 } catch (kiss) {
                     // and swallow
                 }
-                if ('error' in json) {
+                if (json && 'error' in json) {
                     throw new ClientError(json.error);
                 }
                 throw new Error(`Unexpected errror: ${text}`);
@@ -148,12 +148,12 @@ export class Client {
 
     async getRules(): Promise<Stuntman.LiveRule[]> {
         const response = await this.fetch(`${this.baseUrl}/rules`);
-        return response.json() as unknown as Promise<Stuntman.LiveRule[]>;
+        return (await response.json()) as Promise<Stuntman.LiveRule[]>;
     }
 
     async getRule(id: string): Promise<Stuntman.LiveRule> {
         const response = await this.fetch(`${this.baseUrl}/rule/${encodeURIComponent(id)}`);
-        return response.json() as unknown as Stuntman.LiveRule;
+        return (await response.json()) as Stuntman.LiveRule;
     }
 
     async disableRule(id: string): Promise<void> {
@@ -175,15 +175,15 @@ export class Client {
             body: JSON.stringify(serializedRule),
             headers: { 'content-type': 'application/json' },
         });
-        return response.json() as unknown as Stuntman.Rule;
+        return (await response.json()) as Stuntman.Rule;
     }
 
     // TODO improve filtering by timestamp from - to, multiple labels, etc.
-    async getTraffic(rule: Stuntman.Rule): Promise<Record<string, Stuntman.LogEntry>>;
-    async getTraffic(ruleIdOrLabel: string): Promise<Record<string, Stuntman.LogEntry>>;
-    async getTraffic(ruleOrIdOrLabel: string | Stuntman.Rule): Promise<Record<string, Stuntman.LogEntry>> {
+    async getTraffic(rule: Stuntman.Rule): Promise<Stuntman.LogEntry[]>;
+    async getTraffic(ruleIdOrLabel: string): Promise<Stuntman.LogEntry[]>;
+    async getTraffic(ruleOrIdOrLabel: string | Stuntman.Rule): Promise<Stuntman.LogEntry[]> {
         const ruleId = typeof ruleOrIdOrLabel === 'object' ? ruleOrIdOrLabel.id : ruleOrIdOrLabel;
         const response = await this.fetch(`${this.baseUrl}/traffic${ruleId ? `/${encodeURIComponent(ruleId)}` : ''}`);
-        return response.json() as unknown as Record<string, Stuntman.LogEntry>;
+        return (await response.json()) as Stuntman.LogEntry[];
     }
 }

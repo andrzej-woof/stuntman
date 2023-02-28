@@ -1,6 +1,6 @@
 {
   "name": "@stuntman/server",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Stuntman - HTTP proxy / mock server with API",
   "main": "dist/index.js",
   "repository": {
@@ -12,7 +12,7 @@
     "url": "https://github.com/andrzej-woof/stuntman/issues"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "SUPPRESS_NO_CONFIG_WARNING=1 jest",
     "clean": "rm -fr dist",
     "build": "tsc && cp -rv src/api/webgui dist/api",
     "lint": "prettier --check . && eslint . --ext ts",
@@ -51,17 +51,19 @@
     "pug": "3.0.2",
     "serialize-javascript": "6.0.1",
     "ts-import": "4.0.0-beta.10",
-    "typescript": "4.9.5",
     "undici": "5.20.0",
     "uuid": "9.0.0"
   },
   "devDependencies": {
+    "@jest/globals": "29.4.3",
     "@prettier/plugin-pug": "2.4.1",
     "@types/express": "4.17.17",
     "@types/glob": "8.1.0",
     "@types/serialize-javascript": "5.0.2",
     "@types/uuid": "9.0.0",
-    "prettier": "2.8.4"
+    "jest": "29.4.3",
+    "prettier": "2.8.4",
+    "typescript": "4.9.5"
   },
   "bin": {
     "stuntman": "./dist/bin/stuntman.js"

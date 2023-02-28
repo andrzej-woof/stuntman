@@ -53,7 +53,7 @@ export type RemotableFunction<T extends Function> = {
 
 export type SerializedRemotableFunction = {
     localFn: string;
-    variable?: string;
+    localVariables?: string;
     remoteFn: string;
 };
 
@@ -118,14 +118,28 @@ export type ResponseGenerationFn = (request: Request) => Response;
 
 export type Actions =
     | {
-          mockResponse: Response | ResponseGenerationFn;
+          proxyPass: true;
+          mockResponse?: undefined;
           modifyRequest?: undefined;
           modifyResponse?: undefined;
       }
     | {
-          mockResponse?: undefined;
-          modifyRequest?: RequestManipulationFn;
+          mockResponse: Response | ResponseGenerationFn;
+          proxyPass?: undefined;
+          modifyRequest?: undefined;
+          modifyResponse?: undefined;
+      }
+    | {
+          modifyRequest: RequestManipulationFn;
           modifyResponse?: ResponseManipulationFn;
+          proxyPass?: true | undefined;
+          mockResponse?: undefined;
+      }
+    | {
+          modifyRequest?: RequestManipulationFn;
+          modifyResponse: ResponseManipulationFn;
+          proxyPass?: true | undefined;
+          mockResponse?: undefined;
       };
 
 export type Rule = {
@@ -133,7 +147,7 @@ export type Rule = {
     priority?: number;
     matches: RuleMatchFunction; // function for picking request to process
     labels?: string[]; // groupping req/res pairs for searching later e.g. ['exoclick', 'testId123']
-    actions?: Actions;
+    actions: Actions;
     disableAfterUse?: boolean | number; // disable after rule is triggered n-times
     removeAfterUse?: boolean | number; // disable after rule is triggered n-times
     ttlSeconds: number;
@@ -186,6 +200,7 @@ export type MockConfig = {
     timeout: number;
     externalDns: string[];
     rulesPath: string;
+    disableProxy?: boolean;
 };
 
 export type StorageConfig = {

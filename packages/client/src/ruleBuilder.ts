@@ -40,6 +40,9 @@ class RuleBuilderBaseBase {
             id: uuidv4(),
             ttlSeconds: DEFAULT_RULE_TTL_SECONDS,
             priority: DEFAULT_RULE_PRIORITY,
+            actions: {
+                mockResponse: { status: 200 },
+            },
             matches: {
                 localFn: (req: Stuntman.Request): Stuntman.RuleMatchResult => {
                     const ___url = new URL(req.url);
@@ -548,6 +551,7 @@ class RuleBuilderInitialized extends RuleBuilderBase {
     }
 
     proxyPass(): Stuntman.SerializableRule {
+        this.rule.actions = { proxyPass: true };
         return this.rule;
     }
 
