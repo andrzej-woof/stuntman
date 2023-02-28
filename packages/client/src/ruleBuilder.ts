@@ -551,6 +551,7 @@ class RuleBuilderInitialized extends RuleBuilderBase {
     }
 
     proxyPass(): Stuntman.SerializableRule {
+        this.rule.actions = { proxyPass: true };
         return this.rule;
     }
 

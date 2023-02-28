@@ -15,14 +15,18 @@ export const validateSerializedRuleProperties = (rule: Stuntman.SerializedRule):
         throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.priority' });
     }
     if (typeof rule.actions !== 'object') {
-        throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.actions' });
+        throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.actions - not an object' });
     }
     if (
+        rule.actions.proxyPass !== true &&
         typeof rule.actions.mockResponse !== 'object' &&
         typeof rule.actions.modifyRequest !== 'object' &&
         typeof rule.actions.modifyResponse !== 'object'
     ) {
-        throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.actions' });
+        throw new AppError({
+            httpCode: HttpCode.BAD_REQUEST,
+            message: 'invalid rule.actions - missing one of: proxyPass, mockResponse, modifyRequest, modifyResponse',
+        });
     }
     if (typeof rule.actions.mockResponse !== 'undefined') {
         if (typeof rule.actions.mockResponse !== 'object') {

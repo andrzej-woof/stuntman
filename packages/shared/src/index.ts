@@ -118,19 +118,28 @@ export type ResponseGenerationFn = (request: Request) => Response;
 
 export type Actions =
     | {
-          mockResponse: Response | ResponseGenerationFn;
+          proxyPass: true;
+          mockResponse?: undefined;
           modifyRequest?: undefined;
           modifyResponse?: undefined;
       }
     | {
-          mockResponse?: undefined;
-          modifyRequest: RequestManipulationFn;
-          modifyResponse?: ResponseManipulationFn;
+          mockResponse: Response | ResponseGenerationFn;
+          proxyPass?: undefined;
+          modifyRequest?: undefined;
+          modifyResponse?: undefined;
       }
     | {
+          modifyRequest: RequestManipulationFn;
+          modifyResponse?: ResponseManipulationFn;
+          proxyPass?: true | undefined;
           mockResponse?: undefined;
+      }
+    | {
           modifyRequest?: RequestManipulationFn;
           modifyResponse: ResponseManipulationFn;
+          proxyPass?: true | undefined;
+          mockResponse?: undefined;
       };
 
 export type Rule = {

@@ -1,6 +1,6 @@
 import { StuntmanMock } from '@stuntman/server';
 import { v4 as uuidv4 } from 'uuid';
-import { DEFAULT_RULE_PRIORITY, serverConfig } from '@stuntman/shared';
+import { serverConfig } from '@stuntman/shared';
 import express from 'express';
 import session from 'express-session';
 import dns from 'node:dns';

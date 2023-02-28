@@ -25,17 +25,17 @@ test('Pass through - external', async (browser) => {
         .proxyPass();
     await stuntmanClient.addRule(storeTrafficRule);
     await browser.click(externalSignup).click(signupButton).expect(signupOk.exists).ok();
-    await browser.expect(await stuntmanClient.getTraffic(storeTrafficRule.id)).eql({}, 'no traffic should be stored by default');
+    await browser.expect(await stuntmanClient.getTraffic(storeTrafficRule.id)).eql([], 'no traffic should be stored by default');
     await browser.click(backButton);
     await browser.click(externalSignup);
     await browser.typeText(email, uniqueEmail, { replace: true, paste: true }).click(signupButton).expect(signupOk.exists).ok();
     await browser
-        .expect(Object.values(await stuntmanClient.getTraffic(storeTrafficRule.id)).length)
+        .expect((await stuntmanClient.getTraffic(storeTrafficRule.id)).length)
         .eql(1, 'traffic should be recorded for matching requests');
     await browser.click(backButton);
     await browser.click(externalSignup);
     await browser.typeText(email, uniqueEmail, { replace: true, paste: true }).click(signupButton).expect(signupOk.exists).ok();
     await browser
-        .expect(Object.values(await stuntmanClient.getTraffic(storeTrafficRule.id)).length)
+        .expect((await stuntmanClient.getTraffic(storeTrafficRule.id)).length)
         .eql(1, 'traffic should not be recorded for subsequent requests');
 });

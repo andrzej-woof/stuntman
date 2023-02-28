@@ -411,9 +411,8 @@ describe('rule initialized', () => {
     describe('mockResponse', () => {
         test('static', () => {
             const builder = ruleBuilder().onAnyRequest();
-            expect(builder['rule'].actions).toBeUndefined();
+            expect(builder['rule'].actions).toEqual({ mockResponse: { status: 200 } });
             builder.mockResponse({});
-            expect(builder['rule'].actions.mockResponse).toEqual({});
         });
 
         test('dynamic', () => {
@@ -478,7 +477,7 @@ describe('rule initialized', () => {
     test('proxyPass', () => {
         const builder = ruleBuilder().onAnyRequest();
         builder.proxyPass();
-        expect(builder['rule'].actions).toBeUndefined();
+        expect(builder['rule'].actions).toEqual({ proxyPass: true });
     });
 
     describe('with', () => {

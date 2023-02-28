@@ -111,10 +111,10 @@ export class API {
         });
 
         this.apiApp.get('/traffic/:ruleIdOrLabel', this.authReadOnly, (req, res) => {
-            const serializedTraffic: Record<string, Stuntman.LogEntry> = {};
-            for (const [key, value] of this.trafficStore.entries()) {
+            const serializedTraffic: Stuntman.LogEntry[] = [];
+            for (const value of this.trafficStore.values()) {
                 if (value.mockRuleId === req.params.ruleIdOrLabel || (value.labels || []).includes(req.params.ruleIdOrLabel)) {
-                    serializedTraffic[key] = value;
+                    serializedTraffic.push(value);
                 }
             }
             res.json(serializedTraffic);
