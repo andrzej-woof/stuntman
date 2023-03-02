@@ -55,7 +55,7 @@ export class IPUtils {
                     return;
                 }
                 logger.debug({ ip: addresses, hostname }, 'resolved hostname');
-                resolve([addresses[0], ...addresses.slice(1)]);
+                resolve([addresses[0]!, ...addresses.slice(1)]);
             };
             if (options?.useExternalDns) {
                 if (!this.externalDns) {

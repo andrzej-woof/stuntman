@@ -1,5 +1,5 @@
 export const stringify = (obj: any) =>
-    JSON.stringify(obj, (key, value) => {
+    JSON.stringify(obj, (_key, value) => {
         if (typeof value === 'function' || value instanceof RegExp) {
             return value.toString();
         }

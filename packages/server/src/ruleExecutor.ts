@@ -136,6 +136,7 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
             } catch (error) {
                 logger.error({ ...logContext, ruleId: rule?.id, error }, 'error in rule match function');
             }
+            return undefined;
         });
         if (!matchingRule) {
             logger.debug(logContext, 'no matching rule found');
@@ -207,5 +208,5 @@ export const getRuleExecutor = (mockUuid: string): RuleExecutor => {
             [...DEFAULT_RULES, ...CUSTOM_RULES].map((r) => ({ ...r, ttlSeconds: Infinity }))
         );
     }
-    return ruleExecutors[mockUuid];
+    return ruleExecutors[mockUuid]!;
 };

@@ -37,7 +37,7 @@ export class API {
         this.authReadWrite = this.authReadWrite.bind(this);
     }
 
-    private auth (req: Request, type: 'read' | 'write'): void {
+    private auth(req: Request, type: 'read' | 'write'): void {
         if (!this.options.apiKeyReadOnly && !this.options.apiKeyReadWrite) {
             return;
         }
@@ -50,12 +50,12 @@ export class API {
         return;
     }
 
-    protected authReadOnly (req: Request, res: Response, next: NextFunction): void {
+    protected authReadOnly(req: Request, _res: Response, next: NextFunction): void {
         this.auth(req, 'read');
         next();
     }
 
-    protected authReadWrite (req: Request, res: Response, next: NextFunction): void {
+    protected authReadWrite(req: Request, _res: Response, next: NextFunction): void {
         this.auth(req, 'write');
         next();
     }
@@ -66,25 +66,34 @@ export class API {
         this.apiApp.use(express.json());
         this.apiApp.use(express.text());
 
-        this.apiApp.use((req: Request, res: Response, next: NextFunction) => {
+        this.apiApp.use((req: Request, _res: Response, next: NextFunction) => {
             RequestContext.bind(req, this.options.mockUuid);
             next();
         });
 
-        this.apiApp.get('/rule', this.authReadOnly.bind, async (req, res) => {
+        this.apiApp.get('/rule', this.authReadOnly.bind, async (_req, res) => {
             res.send(stringify(await getRuleExecutor(this.options.mockUuid).getRules()));
         });
 
         this.apiApp.get('/rule/:ruleId', this.authReadOnly, async (req, res) => {
+            if (!req.params.ruleId) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
+            }
             res.send(stringify(await getRuleExecutor(this.options.mockUuid).getRule(req.params.ruleId)));
         });
 
         this.apiApp.get('/rule/:ruleId/disable', this.authReadWrite, (req, res) => {
+            if (!req.params.ruleId) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
+            }
             getRuleExecutor(this.options.mockUuid).disableRule(req.params.ruleId);
             res.send();
         });
 
         this.apiApp.get('/rule/:ruleId/enable', this.authReadWrite, (req, res) => {
+            if (!req.params.ruleId) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
+            }
             getRuleExecutor(this.options.mockUuid).enableRule(req.params.ruleId);
             res.send();
         });
@@ -103,11 +112,14 @@ export class API {
         );
 
         this.apiApp.get('/rule/:ruleId/remove', this.authReadWrite, async (req, res) => {
+            if (!req.params.ruleId) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
+            }
             await getRuleExecutor(this.options.mockUuid).removeRule(req.params.ruleId);
             res.send();
         });
 
-        this.apiApp.get('/traffic', this.authReadOnly, (req, res) => {
+        this.apiApp.get('/traffic', this.authReadOnly, (_req, res) => {
             const serializedTraffic: Stuntman.LogEntry[] = [];
             for (const value of this.trafficStore.values()) {
                 serializedTraffic.push(value);
@@ -116,6 +128,9 @@ export class API {
         });
 
         this.apiApp.get('/traffic/:ruleIdOrLabel', this.authReadOnly, (req, res) => {
+            if (!req.params.ruleIdOrLabel) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleIdOrLabel' });
+            }
             const serializedTraffic: Stuntman.LogEntry[] = [];
             for (const value of this.trafficStore.values()) {
                 if (value.mockRuleId === req.params.ruleIdOrLabel || (value.labels || []).includes(req.params.ruleIdOrLabel)) {
@@ -131,7 +146,7 @@ export class API {
             this.initWebGui();
         }
 
-        this.apiApp.all(/.*/, (req: Request, res: Response) => res.status(404).send());
+        this.apiApp.all(/.*/, (_req: Request, res: Response) => res.status(404).send());
 
         this.apiApp.use((error: Error | AppError, req: Request, res: Response) => {
             const ctx: RequestContext | null = RequestContext.get(req);
@@ -160,7 +175,7 @@ export class API {
         if (!this.apiApp) {
             throw new Error('initialization error');
         }
-        this.apiApp.get('/webgui/rules', this.authReadOnly, async (req, res) => {
+        this.apiApp.get('/webgui/rules', this.authReadOnly, async (_req, res) => {
             const rules: Record<string, string> = {};
             for (const rule of await getRuleExecutor(this.options.mockUuid).getRules()) {
                 rules[rule.id] = serializeJavascript(liveRuleToRule(rule), { unsafe: true });
@@ -168,7 +183,7 @@ export class API {
             res.render('rules', { rules: escapedSerialize(rules), INDEX_DTS, ruleKeys: Object.keys(rules) });
         });
 
-        this.apiApp.get('/webgui/traffic', this.authReadOnly, async (req, res) => {
+        this.apiApp.get('/webgui/traffic', this.authReadOnly, async (_req, res) => {
             const serializedTraffic: Stuntman.LogEntry[] = [];
             for (const value of this.trafficStore.values()) {
                 serializedTraffic.push(value);

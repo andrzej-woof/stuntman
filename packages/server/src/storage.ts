@@ -28,12 +28,12 @@ export const getTrafficStore = (key: string, options?: Stuntman.StorageConfig) =
             sizeCalculation: (value) => sizeof(value),
         });
     }
-    return trafficStoreInstances[key];
+    return trafficStoreInstances[key]!;
 };
 
 export const getDnsResolutionCache = (key: string) => {
     if (!(key in dnsResolutionCacheInstances)) {
         dnsResolutionCacheInstances[key] = new LRUCache<string, string>(DNS_CACHE_OPTIONS);
     }
-    return dnsResolutionCacheInstances[key];
+    return dnsResolutionCacheInstances[key]!;
 };

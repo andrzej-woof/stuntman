@@ -92,7 +92,7 @@ export type BaseRequest = {
 export type Request = BaseRequest & {
     id: string;
     timestamp: number;
-    gqlBody?: GQLRequestBody;
+    gqlBody?: GQLRequestBody | undefined;
 };
 
 export type Response = {
@@ -104,7 +104,7 @@ export type Response = {
 
 export type LogEntry = {
     originalRequest: Request;
-    labels?: string[];
+    labels?: string[] | undefined;
     mockRuleId?: string;
     originalResponse?: Response;
     modifiedRequest?: Request;
@@ -185,10 +185,11 @@ export type ApiConfig = {
 };
 
 export type ClientConfig = {
-    protocol?: 'http' | 'https';
-    host?: string;
-    port?: number;
-    timeout?: number;
+    protocol: 'http' | 'https';
+    host: string;
+    port: number;
+    timeout: number;
+    apiKey?: string;
 };
 
 export type MockConfig = {
@@ -209,13 +210,14 @@ export type StorageConfig = {
     ttl: number;
 };
 
-export type ServerConfig = {
+export type Config = {
     webgui: WebGuiConfig;
     api: ApiConfig;
     mock: MockConfig;
     storage: {
         traffic: StorageConfig;
     };
+    client: ClientConfig;
 };
 
 export interface RuleExecutorInterface {

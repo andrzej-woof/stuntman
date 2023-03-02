@@ -59,10 +59,10 @@ class RuleBuilderBaseBase {
                             return { result: false, description: `${parentPath} is falsey` };
                         }
                         const [rawKey, ...rest] = path.split('.');
-                        const key = rawKey.replace(arrayIndexerRegex, '');
-                        const shouldBeArray = arrayIndexerRegex.test(rawKey);
+                        const key = (rawKey ?? '').replace(arrayIndexerRegex, '');
+                        const shouldBeArray = rawKey ? arrayIndexerRegex.test(rawKey) : false;
                         const arrayIndex =
-                            (arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex || '').length > 0
+                            rawKey && (arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex || '').length > 0
                                 ? Number(arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex)
                                 : Number.NaN;
                         const actualValue = key ? obj[key] : obj;
@@ -532,7 +532,11 @@ class RuleBuilderInitialized extends RuleBuilderBase {
             if (!keyRegex.test(keyOrMatcher)) {
                 throw new Error(`invalid key "${keyOrMatcher}"`);
             }
-            this._matchBuilderVariables.bodyJson.push({ key: keyOrMatcher, value: withValue });
+            if (withValue === undefined) {
+                this._matchBuilderVariables.bodyJson.push({ key: keyOrMatcher });
+            } else {
+                this._matchBuilderVariables.bodyJson.push({ key: keyOrMatcher, value: withValue });
+            }
             return this;
         }
         if (withValue !== undefined) {

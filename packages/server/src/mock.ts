@@ -26,12 +26,15 @@ const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody | undefi
             // and swallow
         }
         if (!json?.query && !json?.operationName) {
-            return;
+            return undefined;
         }
         const lines = json.query
             .split('\n')
             .map((l) => l.replace(/^\s+/g, '').trim())
             .filter((l) => !!l);
+        if (!lines[0]) {
+            throw new Error('unable to find query');
+        }
         if (/^query /.test(lines[0])) {
             json.type = 'query';
         } else if (/^mutation /.test(lines[0])) {
@@ -39,7 +42,11 @@ const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody | undefi
         } else {
             throw new Error(`Unable to resolve query type of ${lines[0]}`);
         }
-        json.methodName = lines[json.operationName ? 1 : 0].split('(')[0].split('{')[0];
+        if (json.operationName && lines[1]) {
+            json.methodName = lines[1].split('(')[0]!.split('{')[0]!;
+        } else if (json.operationName) {
+            json.methodName = lines[0].split('(')[0]!.split('{')[0]!;
+        }
         return json;
     } catch (error) {
         logger.debug(error, 'unable to parse GQL');
@@ -51,7 +58,7 @@ const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody | undefi
 
 export class Mock {
     public readonly mockUuid: string;
-    protected options: Stuntman.ServerConfig;
+    protected options: Stuntman.Config;
     protected mockApp: express.Express | null = null;
     protected MOCK_DOMAIN_REGEX: RegExp;
     protected URL_PORT_REGEX: RegExp;
@@ -75,7 +82,7 @@ export class Mock {
         return getRuleExecutor(this.mockUuid);
     }
 
-    constructor(options: Stuntman.ServerConfig) {
+    constructor(options: Stuntman.Config) {
         this.mockUuid = uuidv4();
         this.options = options;
         if (this.options.mock.httpsPort && (!this.options.mock.httpsKey || !this.options.mock.httpsCert)) {
@@ -103,7 +110,7 @@ export class Mock {
         this.requestHandler = this.requestHandler.bind(this);
     }
 
-    private async requestHandler (req: express.Request, res: express.Response): Promise<void> {
+    private async requestHandler(req: express.Request, res: express.Response): Promise<void> {
         const ctx: RequestContext | null = RequestContext.get(req);
         const requestUuid = ctx?.uuid || uuidv4();
         const timestamp = Date.now();
@@ -165,7 +172,7 @@ export class Mock {
             }
         }
         if (this.ipUtils && !isProxiedHostname && !this.ipUtils.isIP(originalHostname)) {
-            const hostname = originalHostname.split(':')[0];
+            const hostname = originalHostname.split(':')[0]!;
             try {
                 const internalIPs = await this.ipUtils.resolveIP(hostname);
                 if (this.ipUtils.isLocalhostIP(internalIPs) && this.options.mock.externalDns.length) {
@@ -230,10 +237,7 @@ export class Mock {
                 // if (/^content-(?:length|encoding)$/i.test(header[0])) {
                 //     continue;
                 // }
-                res.setHeader(
-                    header[0],
-                    isProxiedHostname ? header[1].replace(unproxiedHostname, originalHostname) : header[1]
-                );
+                res.setHeader(header[0], isProxiedHostname ? header[1].replace(unproxiedHostname, originalHostname) : header[1]);
             }
         }
         res.end(Buffer.from(modifedResponse.body, 'binary'));
@@ -247,7 +251,7 @@ export class Mock {
         // TODO for now request body is just a buffer passed further, not inflated
         this.mockApp.use(express.raw({ type: '*/*' }));
 
-        this.mockApp.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+        this.mockApp.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
             RequestContext.bind(req, this.mockUuid);
             next();
         });
@@ -386,7 +390,7 @@ export class Mock {
             host.endsWith(`:${this.options.mock.port}`) ||
             (this.options.mock.httpsPort && host.endsWith(`:${this.options.mock.httpsPort}`))
         ) {
-            req.rawHeaders.set('host', host.split(':')[0]);
+            req.rawHeaders.set('host', host.split(':')[0]!);
         }
     }
 }

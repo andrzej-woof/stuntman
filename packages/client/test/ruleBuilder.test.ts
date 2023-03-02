@@ -653,12 +653,12 @@ describe('rule initialized', () => {
 
         test('searchparam', () => {
             // TODO
-            const builder = ruleBuilder().onAnyRequest();
+            // const builder = ruleBuilder().onAnyRequest();
         });
 
         test('searchparams', () => {
             // TODO
-            const builder = ruleBuilder().onAnyRequest();
+            // const builder = ruleBuilder().onAnyRequest();
         });
 
         test('without body', () => {
@@ -967,7 +967,7 @@ describe('rule initialized', () => {
 
         test('body gql', () => {
             // TODO
-            const builder = ruleBuilder().onAnyRequest();
+            // const builder = ruleBuilder().onAnyRequest();
         });
     });
 });

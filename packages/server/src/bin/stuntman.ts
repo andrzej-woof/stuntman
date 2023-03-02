@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { Mock } from '../mock';
-import { serverConfig } from '@stuntman/shared';
+import { stuntmanConfig } from '@stuntman/shared';
 
-const mock = new Mock(serverConfig);
+const mock = new Mock(stuntmanConfig);
 
 mock.start();

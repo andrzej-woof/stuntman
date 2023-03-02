@@ -5,10 +5,10 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
         const headers = this.toHeaderPairs();
         const matchingHeaders = headers.filter((h) => h[0].toLowerCase() === name.toLowerCase());
         if (matchingHeaders.length === 0) {
-            return;
+            return undefined;
         }
         if (matchingHeaders.length === 1) {
-            return matchingHeaders[0][1];
+            return matchingHeaders[0]?.[1];
         }
         throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
     }
@@ -24,13 +24,14 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
     set(name: string, value: string): void {
         let foundHeaders = 0;
         for (let headerIndex = 0; headerIndex < this.length; headerIndex += 2) {
-            if (this[headerIndex].toLowerCase() === name.toLowerCase()) {
+            if (this[headerIndex]?.toLowerCase() === name.toLowerCase()) {
                 this[headerIndex + 1] = value;
                 ++foundHeaders;
             }
         }
         if (foundHeaders === 0) {
-            return this.add(name, value);
+            this.add(name, value);
+            return;
         }
         if (foundHeaders > 1) {
             throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
@@ -46,7 +47,7 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
         const headersCopy = [...this];
         let foundHeaders = 0;
         for (let headerIndex = 0; headerIndex < headersCopy.length; headerIndex += 2) {
-            if (this[headerIndex - foundHeaders * 2].toLowerCase() === name.toLowerCase()) {
+            if (this[headerIndex - foundHeaders * 2]?.toLowerCase() === name.toLowerCase()) {
                 delete this[headerIndex];
                 delete this[headerIndex];
                 ++foundHeaders;
@@ -82,7 +83,7 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
     static toHeaderPairs(rawHeaders: string[]): readonly [string, string][] {
         const headers = new Array<[string, string]>();
         for (let headerIndex = 0; headerIndex < rawHeaders.length; headerIndex += 2) {
-            headers.push([rawHeaders[headerIndex], rawHeaders[headerIndex + 1]]);
+            headers.push([rawHeaders[headerIndex]!, rawHeaders[headerIndex + 1]!]);
         }
         return headers;
     }

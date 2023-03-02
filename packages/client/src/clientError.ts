@@ -17,6 +17,8 @@ export class ClientError extends AppError {
 
     constructor(args: Stuntman.AppError & { stack?: string }) {
         super(args);
-        this.originalStack = args.stack;
+        if (args.stack) {
+            this.originalStack = args.stack;
+        }
     }
 }
