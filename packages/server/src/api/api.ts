@@ -19,54 +19,59 @@ const API_KEY_HEADER = 'x-api-key';
 
 export class API {
     protected options: Required<ApiOptions>;
-    protected apiApp: ExpressServer;
+    protected webGuiOptions: Stuntman.WebGuiConfig;
+    protected apiApp: ExpressServer | null = null;
     trafficStore: LRUCache<string, Stuntman.LogEntry>;
     server: http.Server | null = null;
-    auth: (req: Request, type: 'read' | 'write') => void;
-    authReadOnly: (req: Request, res: Response, next: NextFunction) => void;
-    authReadWrite: (req: Request, res: Response, next: NextFunction) => void;
 
-    constructor(options: ApiOptions, webGuiOptions?: Stuntman.WebGuiConfig) {
+    constructor(options: ApiOptions, webGuiOptions: Stuntman.WebGuiConfig = { disabled: false }) {
         if (!options.apiKeyReadOnly !== !options.apiKeyReadWrite) {
             throw new Error('apiKeyReadOnly and apiKeyReadWrite options need to be set either both or none');
         }
         this.options = options;
+        this.webGuiOptions = webGuiOptions;
 
         this.trafficStore = getTrafficStore(this.options.mockUuid);
+        this.auth = this.auth.bind(this);
+        this.authReadOnly = this.authReadOnly.bind(this);
+        this.authReadWrite = this.authReadWrite.bind(this);
+    }
+
+    private auth (req: Request, type: 'read' | 'write'): void {
+        if (!this.options.apiKeyReadOnly && !this.options.apiKeyReadWrite) {
+            return;
+        }
+        const hasValidReadKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadOnly;
+        const hasValidWriteKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadWrite;
+        const hasValidKey = type === 'read' ? hasValidReadKey || hasValidWriteKey : hasValidWriteKey;
+        if (!hasValidKey) {
+            throw new AppError({ httpCode: HttpCode.UNAUTHORIZED, message: 'unauthorized' });
+        }
+        return;
+    }
+
+    protected authReadOnly (req: Request, res: Response, next: NextFunction): void {
+        this.auth(req, 'read');
+        next();
+    }
+
+    protected authReadWrite (req: Request, res: Response, next: NextFunction): void {
+        this.auth(req, 'write');
+        next();
+    }
+
+    private initApi() {
         this.apiApp = express();
 
         this.apiApp.use(express.json());
         this.apiApp.use(express.text());
-
-        this.auth = (req: Request, type: 'read' | 'write'): void => {
-            if (!this.options.apiKeyReadOnly && !this.options.apiKeyReadWrite) {
-                return;
-            }
-            const hasValidReadKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadOnly;
-            const hasValidWriteKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadWrite;
-            const hasValidKey = type === 'read' ? hasValidReadKey || hasValidWriteKey : hasValidWriteKey;
-            if (!hasValidKey) {
-                throw new AppError({ httpCode: HttpCode.UNAUTHORIZED, message: 'unauthorized' });
-            }
-            return;
-        };
-
-        this.authReadOnly = (req: Request, res: Response, next: NextFunction): void => {
-            this.auth(req, 'read');
-            next();
-        };
-
-        this.authReadWrite = (req: Request, res: Response, next: NextFunction): void => {
-            this.auth(req, 'write');
-            next();
-        };
 
         this.apiApp.use((req: Request, res: Response, next: NextFunction) => {
             RequestContext.bind(req, this.options.mockUuid);
             next();
         });
 
-        this.apiApp.get('/rule', this.authReadOnly, async (req, res) => {
+        this.apiApp.get('/rule', this.authReadOnly.bind, async (req, res) => {
             res.send(stringify(await getRuleExecutor(this.options.mockUuid).getRules()));
         });
 
@@ -120,7 +125,7 @@ export class API {
             res.json(serializedTraffic);
         });
 
-        if (!webGuiOptions?.disabled) {
+        if (!this.webGuiOptions.disabled) {
             this.apiApp.set('views', __dirname + '/webgui');
             this.apiApp.set('view engine', 'pug');
             this.initWebGui();
@@ -152,6 +157,9 @@ export class API {
     }
 
     private initWebGui() {
+        if (!this.apiApp) {
+            throw new Error('initialization error');
+        }
         this.apiApp.get('/webgui/rules', this.authReadOnly, async (req, res) => {
             const rules: Record<string, string> = {};
             for (const rule of await getRuleExecutor(this.options.mockUuid).getRules()) {
@@ -207,6 +215,10 @@ export class API {
     public start() {
         if (this.server) {
             throw new Error('mock server already started');
+        }
+        this.initApi();
+        if (!this.apiApp) {
+            throw new Error('initialization error');
         }
         this.server = this.apiApp.listen(this.options.port, () => {
             logger.info(`API listening on ${this.options.port}`);
