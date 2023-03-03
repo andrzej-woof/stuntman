@@ -1,5 +1,10 @@
 # Stuntman
 
+[![npm](https://img.shields.io/npm/v/@stuntman/server.svg)][npmjs]
+[![Build Status](https://img.shields.io/github/actions/workflow/status/andrzej-woof/stuntman/ci)]
+
+[npmjs]: https://www.npmjs.com/org/stuntman
+
 Stuntman is a proxy/mock server that can be deployed remotely together with your application under test, working as either pass-through proxy allowing you to inspect traffic or proxy/mock which can intercept requests/responses and modify them or stub with predefined ones.
 
 It offers API and client library that can be used for example within E2E functional test scripts to dynamically alter it's behaviour for specific traffic matching set of rules of your definition.
