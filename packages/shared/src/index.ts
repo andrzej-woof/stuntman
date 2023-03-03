@@ -6,8 +6,11 @@ export * from './stringify';
 export * from './rawHeaders';
 export * from './config';
 export * from './gqlParser';
+export * from './escapeStringRegexp';
 
 import fs from 'fs';
+
+// TODO this file read sucks
 export const INDEX_DTS = fs.readFileSync(`${__dirname}/index.d.ts`, 'utf-8');
 
 type NonObject = string | number | boolean | symbol | undefined | null | any[];

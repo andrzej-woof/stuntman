@@ -6,7 +6,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getRuleExecutor } from './ruleExecutor';
 import { getTrafficStore } from './storage';
-import { RawHeaders, logger, HttpCode, naiveGQLParser } from '@stuntman/shared';
+import { RawHeaders, logger, HttpCode, naiveGQLParser, escapeStringRegexp } from '@stuntman/shared';
 import RequestContext from './requestContext';
 import type * as Stuntman from '@stuntman/shared';
 import { IPUtils } from './ipUtils';
@@ -173,7 +173,7 @@ export class Mock {
                         isProxiedHostname
                             ? value
                             : value.replace(
-                                  new RegExp(`(?:^|\\b)(${unproxiedHostname.replace('.', '\\.')})(?:\\b|$)`, 'igm'),
+                                  new RegExp(`(?:^|\\b)(${escapeStringRegexp(unproxiedHostname)})(?:\\b|$)`, 'igm'),
                                   originalHostname
                               ),
                     ];
