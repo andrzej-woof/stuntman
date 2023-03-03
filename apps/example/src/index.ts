@@ -1,6 +1,6 @@
 import { StuntmanMock } from '@stuntman/server';
 import { v4 as uuidv4 } from 'uuid';
-import { serverConfig } from '@stuntman/shared';
+import { stuntmanConfig } from '@stuntman/shared';
 import express from 'express';
 import session from 'express-session';
 import dns from 'node:dns';
@@ -24,7 +24,7 @@ const staticLookup = (
             cb(new Error('Unable to find address'), '', 4);
             return;
         }
-        cb(err, addresses[0], 4);
+        cb(err, addresses[0]!, 4);
     });
 };
 
@@ -35,8 +35,8 @@ const staticDnsAgent = (scheme: 'http' | 'https') => {
 
 declare module 'express-session' {
     interface SessionData {
-        referral?: string;
-        uniqueId?: string;
+        referral?: string | undefined;
+        uniqueId?: string | undefined;
     }
 }
 
@@ -81,11 +81,11 @@ const postHit = async (uniqueId: string, email: string) => {
     }
 };
 
-exampleApp.get('/', async (req: express.Request, res) => {
+exampleApp.get('/', async (_req: express.Request, res) => {
     res.render('home', { uniqueId: uuidv4() });
 });
 
-exampleApp.get('/home', async (req: express.Request, res) => {
+exampleApp.get('/home', async (_req: express.Request, res) => {
     res.render('home', { uniqueId: uuidv4() });
 });
 
@@ -113,7 +113,7 @@ exampleApp.post('/signup', async (req: express.Request<null, any, { email: strin
     res.render('signupOk', { email: req.body.email });
 });
 
-const mock = new StuntmanMock(serverConfig);
+const mock = new StuntmanMock(stuntmanConfig);
 // NOTE: mock will automatically load and compile rules from ./rules directory
 
 mock.start();

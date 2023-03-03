@@ -15,8 +15,8 @@
         "test": "SUPPRESS_NO_CONFIG_WARNING=1 jest",
         "clean": "rm -fr dist",
         "build": "tsc",
-        "lint": "prettier --check . && eslint . --ext ts",
-        "lint:fix": "prettier --write ./{src,test} && eslint ./{src,test} --ext ts --fix"
+        "lint": "prettier --check \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\"",
+        "lint:fix": "prettier --write \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\" --fix"
     },
     "keywords": [
         "proxy",

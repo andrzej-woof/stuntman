@@ -31,7 +31,7 @@ pnpm stuntman
 
 Stuntman uses [config](https://github.com/node-config/node-config)
 
-You can create `config/default.json` with settings of your liking matching `ServerConfig` type
+You can create `config/default.json` with settings of your liking matching `Stuntman.Config` type
 
 ## Running as a package
 
@@ -55,9 +55,9 @@ node ./node_modules/.bin/stuntman
 
 ```ts
 import { Mock } from '../mock';
-import { serverConfig } from '@stuntman/shared';
+import { stuntmanConfig } from '@stuntman/shared';
 
-const mock = new Mock(serverConfig);
+const mock = new Mock(stuntmanConfig);
 
 mock.start();
 ```

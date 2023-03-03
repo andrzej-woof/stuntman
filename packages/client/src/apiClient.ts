@@ -1,15 +1,7 @@
 import serializeJavascript from 'serialize-javascript';
 import { ClientError } from './clientError';
-import { DEFAULT_API_PORT } from '@stuntman/shared';
+import { stuntmanConfig } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
-
-type ClientOptions = {
-    protocol?: 'http' | 'https';
-    host?: string;
-    port?: number;
-    timeout?: number;
-    apiKey?: string;
-};
 
 const SERIALIZE_JAVASCRIPT_OPTIONS: serializeJavascript.SerializeJSOptions = {
     unsafe: true,
@@ -97,19 +89,17 @@ const serializeRemotableFunctions = <T>(obj: any): Stuntman.WithSerializedFuncti
 export class Client {
     // TODO websockets connection to API and hooks `onIntereceptedRequest`, `onInterceptedResponse`
 
-    private options: ClientOptions;
+    private options: Stuntman.ClientConfig;
 
     private get baseUrl() {
         return `${this.options.protocol}://${this.options.host}${this.options.port ? `:${this.options.port}` : ''}`;
     }
 
-    constructor(options?: ClientOptions) {
+    constructor(options?: Partial<Stuntman.ClientConfig>) {
         this.options = {
+            ...stuntmanConfig.client,
             ...options,
-            timeout: options?.timeout || 60000,
-            host: options?.host || 'localhost',
-            protocol: options?.protocol || 'http',
-            port: options?.port || options?.protocol ? (options.protocol === 'https' ? 443 : 80) : DEFAULT_API_PORT,
+            port: options?.port || options?.protocol ? (options.protocol === 'https' ? 443 : 80) : stuntmanConfig.client.port,
         };
     }
 

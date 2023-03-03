@@ -1,14 +1,16 @@
 module.exports = {
-    extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
+    extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'plugin:css/recommended'],
     parser: '@typescript-eslint/parser',
-    plugins: ['@typescript-eslint'],
+    plugins: ['@typescript-eslint', 'pug', 'css'],
     root: true,
+    ignorePatterns: ["**/*.css", "**/*.scss"],
     parserOptions: {
         tsconfigRootDir: __dirname,
         sourceType: 'module',
-        project: ['./tsconfig.json'], // Specify it only for TypeScript files
+        extraFileExtensions: ['.css', '.pug'],
     },
     rules: {
-        'no-console': 'error'
+        'no-console': 'error',
+        'consistent-return': 'error'
     }
 };

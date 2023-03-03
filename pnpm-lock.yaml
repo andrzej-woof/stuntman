@@ -10,7 +10,9 @@ importers:
       '@typescript-eslint/parser': 5.52.0
       eslint: 8.34.0
       eslint-config-prettier: 8.6.0
+      eslint-plugin-css: 0.6.0
       eslint-plugin-jsdoc: 40.0.0
+      eslint-plugin-pug: 1.2.5
       jest: 29.4.3
       nodemon: 2.0.20
       prettier: 2.8.4
@@ -23,7 +25,9 @@ importers:
       '@typescript-eslint/parser': 5.52.0_7kw3g6rralp5ps6mg3uyzz6azm
       eslint: 8.34.0
       eslint-config-prettier: 8.6.0_eslint@8.34.0
+      eslint-plugin-css: 0.6.0_eslint@8.34.0
       eslint-plugin-jsdoc: 40.0.0_eslint@8.34.0
+      eslint-plugin-pug: 1.2.5
       jest: 29.4.3_ucpl6toqp57nqodtp3vxxi6g5a
       nodemon: 2.0.20
       prettier: 2.8.4
@@ -3060,6 +3064,10 @@ packages:
   /color-name/1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
 
+  /colord/2.9.3:
+    resolution: {integrity: sha512-jeC1axXpnb0/2nn/Y1LPuLdgXBLH7aDcHu4KEKfqw3CUhX7ZpfBSlPKyqXE6btIgEzfWtrX3/tyBCaCvXvMkOw==}
+    dev: true
+
   /combined-stream/1.0.8:
     resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
     engines: {node: '>= 0.8'}
@@ -3444,6 +3452,19 @@ packages:
       eslint: 8.34.0
     dev: true
 
+  /eslint-plugin-css/0.6.0_eslint@8.34.0:
+    resolution: {integrity: sha512-cQ+FsHNmVVSfMhiZnhhBvvdmzNF2oDvuY9oSpfGGMJctwDQiKtZ1rdALb0psHfobg8nBPwkgHg4i8JQhI8lXJQ==}
+    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+    peerDependencies:
+      eslint: '>=7.0.0'
+    dependencies:
+      colord: 2.9.3
+      eslint: 8.34.0
+      eslint-utils: 3.0.0_eslint@8.34.0
+      known-css-properties: 0.24.0
+      postcss-value-parser: 4.2.0
+    dev: true
+
   /eslint-plugin-jsdoc/40.0.0_eslint@8.34.0:
     resolution: {integrity: sha512-LOPyIu1vAVvGPkye3ci0moj0iNf3f8bmin6do2DYDj+77NRXWnkmhKRy8swWsatUs3mB5jYPWPUsFg9pyfEiyA==}
     engines: {node: ^14 || ^16 || ^17 || ^18 || ^19}
@@ -3460,6 +3481,15 @@ packages:
       spdx-expression-parse: 3.0.1
     transitivePeerDependencies:
       - supports-color
+    dev: true
+
+  /eslint-plugin-pug/1.2.5:
+    resolution: {integrity: sha512-rxsQI8ch1pUtP6jBBbmx3dqesZ+5+FdFgzP61pQgIWUezg5YwV+we0ROqk1JF71xdUrMKJkKbJglJ6lHrsOSzg==}
+    dependencies:
+      lodash: 4.17.21
+      pug-lexer: 5.0.1
+      pug-parser: 6.0.0
+      pug-walk: 2.0.0
     dev: true
 
   /eslint-scope/5.1.1:
@@ -5048,6 +5078,10 @@ packages:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
 
+  /known-css-properties/0.24.0:
+    resolution: {integrity: sha512-RTSoaUAfLvpR357vWzAz/50Q/BmHfmE6ETSWfutT0AJiw10e6CmcdYRQJlLRd95B53D0Y2aD1jSxD3V3ySF+PA==}
+    dev: true
+
   /leven/3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
     engines: {node: '>=6'}
@@ -5107,7 +5141,6 @@ packages:
 
   /lodash/4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
-    dev: false
 
   /log-update-async-hook/2.0.7:
     resolution: {integrity: sha512-V9KpD1AZUBd/oiZ+/Xsgd5rRP9awhgtRiDv5Am4VQCixiDnAbXMdt/yKz41kCzYZtVbwC6YCxnWEF3zjNEwktA==}
@@ -5644,6 +5677,10 @@ packages:
     engines: {node: '>=4.0.0'}
     dev: false
 
+  /postcss-value-parser/4.2.0:
+    resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
+    dev: true
+
   /prelude-ls/1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
@@ -5777,7 +5814,6 @@ packages:
     dependencies:
       pug-error: 2.0.0
       token-stream: 1.0.0
-    dev: false
 
   /pug-runtime/3.0.1:
     resolution: {integrity: sha512-L50zbvrQ35TkpHwv0G6aLSuueDRwc/97XdY8kL3tOT0FmhgG7UypU3VztfV/LATAvmUfYi4wNxSajhSAeNN+Kg==}
@@ -5791,7 +5827,6 @@ packages:
 
   /pug-walk/2.0.0:
     resolution: {integrity: sha512-yYELe9Q5q9IQhuvqsZNwA5hfPkMJ8u92bQLIMcsMxf/VADjNtEYptU+inlufAFYcWdHlwNfZOEnOOQrZrcyJCQ==}
-    dev: false
 
   /pug/3.0.2:
     resolution: {integrity: sha512-bp0I/hiK1D1vChHh6EfDxtndHji55XP/ZJKwsRqrz6lRia6ZC2OZbdAymlxdVFwd1L70ebrVJw4/eZ79skrIaw==}
@@ -6630,7 +6665,6 @@ packages:
 
   /token-stream/1.0.0:
     resolution: {integrity: sha512-VSsyNPPW74RpHwR8Fc21uubwHY7wMDeJLys2IX5zJNih+OnAnaifKHo+1LHT7DAdloQ7apeaaWg8l7qnf/TnEg==}
-    dev: false
 
   /touch/3.1.0:
     resolution: {integrity: sha512-WBx8Uy5TLtOSRtIq+M03/sKDrXCLHxwDcquSP2c43Le03/9serjQBIztjRz6FkJez9D/hleyAXTBGLwwZUw9lA==}

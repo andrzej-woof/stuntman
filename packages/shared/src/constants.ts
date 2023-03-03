@@ -12,3 +12,4 @@ export const MAX_RULE_TTL_SECONDS = 60 * 60;
 export const CATCH_ALL_RULE_PRIORITY = Infinity;
 export const CATCH_RULE_NAME = 'internal/catch-all';
 export const EXTERNAL_DNS = ['8.8.8.8', '1.1.1.1'];
+export const VALID_HOSTNAME_REGEX = /^(([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])\.)*([a-z0-9]|[a-z0-9][a-z0-9\\-]*[a-z0-9])$/i;

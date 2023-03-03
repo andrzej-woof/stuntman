@@ -22,6 +22,7 @@ html
             div(style='margin-left: 240px')
                 #container(style='height: 400px')
                     script.
+                        /* eslint no-undef: 0 */
                         const uuidv4 = () => {
                             function getRandomSymbol(symbol) {
                                 var array;
@@ -72,7 +73,6 @@ html
                             }
                             const editor = monaco.editor.create(document.getElementById('container'), {
                                 theme: 'vs-dark',
-                                autoIndent: true,
                                 formatOnPaste: true,
                                 formatOnType: true,
                                 automaticLayout: true,
@@ -135,7 +135,7 @@ html
 
                             window.newRule = () => {
                                 const ruleId = uuidv4();
-                                const emptyRule = `import type * as Stuntman from \'stuntman\';\n\nvar STUNTMAN_RULE: Stuntman.Rule = { id: '${ruleId}', matches: (req: Stuntman.Request) => true, ttlSeconds: 600, actions: { mockResponse: { status: '200', body: '${ruleId}' }} };`;
+                                const emptyRule = `import type * as Stuntman from 'stuntman';\n\nvar STUNTMAN_RULE: Stuntman.Rule = { id: '${ruleId}', matches: (req: Stuntman.Request) => true, ttlSeconds: 600, actions: { mockResponse: { status: '200', body: '${ruleId}' }} };`;
                                 models[ruleId] = monaco.editor.createModel(emptyRule, 'typescript', `file:///${ruleId}.ts`);
                                 const ruleKeyNode = document.getElementById('ruleKeys').firstChild;
                                 const ruleKeyNodeClone = ruleKeyNode.cloneNode(true);

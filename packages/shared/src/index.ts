@@ -4,9 +4,14 @@ export * from './appError';
 export * from './logger';
 export * from './stringify';
 export * from './rawHeaders';
-export * from './config';
-
+export * from './gqlParser';
+export * from './escapeStringRegexp';
 import fs from 'fs';
+
+import config from './config';
+export const stuntmanConfig = config.stuntmanConfig;
+
+// TODO this file read sucks
 export const INDEX_DTS = fs.readFileSync(`${__dirname}/index.d.ts`, 'utf-8');
 
 type NonObject = string | number | boolean | symbol | undefined | null | any[];
@@ -92,7 +97,7 @@ export type BaseRequest = {
 export type Request = BaseRequest & {
     id: string;
     timestamp: number;
-    gqlBody?: GQLRequestBody;
+    gqlBody?: GQLRequestBody | undefined;
 };
 
 export type Response = {
@@ -104,7 +109,7 @@ export type Response = {
 
 export type LogEntry = {
     originalRequest: Request;
-    labels?: string[];
+    labels?: string[] | undefined;
     mockRuleId?: string;
     originalResponse?: Response;
     modifiedRequest?: Request;
@@ -185,10 +190,11 @@ export type ApiConfig = {
 };
 
 export type ClientConfig = {
-    protocol?: 'http' | 'https';
-    host?: string;
-    port?: number;
-    timeout?: number;
+    protocol: 'http' | 'https';
+    host: string;
+    port: number;
+    timeout: number;
+    apiKey?: string;
 };
 
 export type MockConfig = {
@@ -209,13 +215,14 @@ export type StorageConfig = {
     ttl: number;
 };
 
-export type ServerConfig = {
+export type Config = {
     webgui: WebGuiConfig;
     api: ApiConfig;
     mock: MockConfig;
     storage: {
         traffic: StorageConfig;
     };
+    client: ClientConfig;
 };
 
 export interface RuleExecutorInterface {

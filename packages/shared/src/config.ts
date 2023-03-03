@@ -1,5 +1,5 @@
 import {
-    ServerConfig,
+    Config,
     DEFAULT_API_PORT,
     DEFAULT_MOCK_DOMAIN,
     EXTERNAL_DNS,
@@ -14,7 +14,7 @@ import path from 'path';
 
 // TODO safeguards & defaults
 
-const defaultConfig: ServerConfig = {
+const defaultConfig: Config = {
     api: {
         disabled: false,
         port: DEFAULT_API_PORT,
@@ -38,16 +38,33 @@ const defaultConfig: ServerConfig = {
     webgui: {
         disabled: false,
     },
+    client: {
+        timeout: 60000,
+        host: 'localhost',
+        protocol: 'http',
+        port: DEFAULT_API_PORT,
+    },
 };
 
-config.util.setModuleDefaults('stuntman', defaultConfig);
+let configFromFile: Config | null = null;
 
-let configFromFile = {} as ServerConfig;
-try {
-    configFromFile = config.get<ServerConfig>('stuntman');
-} catch (error) {
-    // eslint-disable-next-line no-console
-    console.warn('unable to find correct config - starting with defaults');
+class ConfigWrapper {
+    get stuntmanConfig(): Config {
+        if (!configFromFile) {
+            config.util.setModuleDefaults('stuntman', defaultConfig);
+            try {
+                configFromFile = config.get<Config>('stuntman');
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.warn('unable to find correct config - starting with defaults');
+            }
+        }
+        if (!configFromFile) {
+            throw new Error('error getting config');
+        }
+        return configFromFile;
+    }
 }
+const configWrapper = new ConfigWrapper();
 
-export const serverConfig = configFromFile;
+export = configWrapper;

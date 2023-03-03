@@ -1,0 +1,10 @@
+{
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "files.exclude": {
+        "**/dist": true
+    },
+    "search.exclude": {
+        "**/dist": true
+    }
+}

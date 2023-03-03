@@ -8,9 +8,7 @@ export interface AppErrorInterface {
 }
 
 export class AppError extends Error {
-    public readonly name: string;
     public readonly httpCode: Stuntman.HttpCode;
-    public readonly uuid?: string;
     public readonly isOperational: boolean = true;
 
     constructor(args: AppErrorInterface) {

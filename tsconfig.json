@@ -12,11 +12,26 @@
         "typeRoots": ["node_modules/@types"],
         "allowJs": true,
         "moduleResolution": "node16",
-        "types": ["node", "jest"]
+        "types": ["node", "jest"],
+        "sourceMap": true,
+        "declarationMap": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "alwaysStrict": true,
+        "exactOptionalPropertyTypes": true,
+        "noImplicitAny": true,
+        "noImplicitOverride": true,
+        "noUncheckedIndexedAccess": true,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": true
     },
     "exclude": [
         "jest.config.js",
-        "./dist/**",
-        "./test/**"
+        "node_modules",
+        "**/node_modules",
+        "**/*/dist",
     ]
 }

@@ -19,67 +19,81 @@ const API_KEY_HEADER = 'x-api-key';
 
 export class API {
     protected options: Required<ApiOptions>;
-    protected apiApp: ExpressServer;
+    protected webGuiOptions: Stuntman.WebGuiConfig;
+    protected apiApp: ExpressServer | null = null;
     trafficStore: LRUCache<string, Stuntman.LogEntry>;
     server: http.Server | null = null;
-    auth: (req: Request, type: 'read' | 'write') => void;
-    authReadOnly: (req: Request, res: Response, next: NextFunction) => void;
-    authReadWrite: (req: Request, res: Response, next: NextFunction) => void;
 
-    constructor(options: ApiOptions, webGuiOptions?: Stuntman.WebGuiConfig) {
+    constructor(options: ApiOptions, webGuiOptions: Stuntman.WebGuiConfig = { disabled: false }) {
         if (!options.apiKeyReadOnly !== !options.apiKeyReadWrite) {
             throw new Error('apiKeyReadOnly and apiKeyReadWrite options need to be set either both or none');
         }
         this.options = options;
+        this.webGuiOptions = webGuiOptions;
 
         this.trafficStore = getTrafficStore(this.options.mockUuid);
+        this.auth = this.auth.bind(this);
+        this.authReadOnly = this.authReadOnly.bind(this);
+        this.authReadWrite = this.authReadWrite.bind(this);
+    }
+
+    private auth(req: Request, type: 'read' | 'write'): void {
+        if (!this.options.apiKeyReadOnly && !this.options.apiKeyReadWrite) {
+            return;
+        }
+        const hasValidReadKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadOnly;
+        const hasValidWriteKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadWrite;
+        const hasValidKey = type === 'read' ? hasValidReadKey || hasValidWriteKey : hasValidWriteKey;
+        if (!hasValidKey) {
+            throw new AppError({ httpCode: HttpCode.UNAUTHORIZED, message: 'unauthorized' });
+        }
+        return;
+    }
+
+    protected authReadOnly(req: Request, _res: Response, next: NextFunction): void {
+        this.auth(req, 'read');
+        next();
+    }
+
+    protected authReadWrite(req: Request, _res: Response, next: NextFunction): void {
+        this.auth(req, 'write');
+        next();
+    }
+
+    private initApi() {
         this.apiApp = express();
 
         this.apiApp.use(express.json());
         this.apiApp.use(express.text());
 
-        this.auth = (req: Request, type: 'read' | 'write'): void => {
-            if (!this.options.apiKeyReadOnly && !this.options.apiKeyReadWrite) {
-                return;
-            }
-            const hasValidReadKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadOnly;
-            const hasValidWriteKey = req.header(API_KEY_HEADER) === this.options.apiKeyReadWrite;
-            const hasValidKey = type === 'read' ? hasValidReadKey || hasValidWriteKey : hasValidWriteKey;
-            if (!hasValidKey) {
-                throw new AppError({ httpCode: HttpCode.UNAUTHORIZED, message: 'unauthorized' });
-            }
-            return;
-        };
-
-        this.authReadOnly = (req: Request, res: Response, next: NextFunction): void => {
-            this.auth(req, 'read');
-            next();
-        };
-
-        this.authReadWrite = (req: Request, res: Response, next: NextFunction): void => {
-            this.auth(req, 'write');
-            next();
-        };
-
-        this.apiApp.use((req: Request, res: Response, next: NextFunction) => {
+        this.apiApp.use((req: Request, _res: Response, next: NextFunction) => {
             RequestContext.bind(req, this.options.mockUuid);
             next();
         });
 
-        this.apiApp.get('/rule', this.authReadOnly, async (req, res) => {
+        this.apiApp.get('/rule', this.authReadOnly.bind, async (_req, res) => {
             res.send(stringify(await getRuleExecutor(this.options.mockUuid).getRules()));
         });
 
         this.apiApp.get('/rule/:ruleId', this.authReadOnly, async (req, res) => {
+            if (!req.params.ruleId) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
+            }
             res.send(stringify(await getRuleExecutor(this.options.mockUuid).getRule(req.params.ruleId)));
         });
 
         this.apiApp.get('/rule/:ruleId/disable', this.authReadWrite, (req, res) => {
+            if (!req.params.ruleId) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
+            }
             getRuleExecutor(this.options.mockUuid).disableRule(req.params.ruleId);
             res.send();
         });
 
         this.apiApp.get('/rule/:ruleId/enable', this.authReadWrite, (req, res) => {
+            if (!req.params.ruleId) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
+            }
             getRuleExecutor(this.options.mockUuid).enableRule(req.params.ruleId);
             res.send();
         });
@@ -98,11 +112,14 @@ export class API {
         );
 
         this.apiApp.get('/rule/:ruleId/remove', this.authReadWrite, async (req, res) => {
+            if (!req.params.ruleId) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
+            }
             await getRuleExecutor(this.options.mockUuid).removeRule(req.params.ruleId);
             res.send();
         });
 
-        this.apiApp.get('/traffic', this.authReadOnly, (req, res) => {
+        this.apiApp.get('/traffic', this.authReadOnly, (_req, res) => {
             const serializedTraffic: Stuntman.LogEntry[] = [];
             for (const value of this.trafficStore.values()) {
                 serializedTraffic.push(value);
@@ -111,6 +128,9 @@ export class API {
         });
 
         this.apiApp.get('/traffic/:ruleIdOrLabel', this.authReadOnly, (req, res) => {
+            if (!req.params.ruleIdOrLabel) {
+                throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleIdOrLabel' });
+            }
             const serializedTraffic: Stuntman.LogEntry[] = [];
             for (const value of this.trafficStore.values()) {
                 if (value.mockRuleId === req.params.ruleIdOrLabel || (value.labels || []).includes(req.params.ruleIdOrLabel)) {
@@ -120,13 +140,13 @@ export class API {
             res.json(serializedTraffic);
         });
 
-        if (!webGuiOptions?.disabled) {
+        if (!this.webGuiOptions.disabled) {
             this.apiApp.set('views', __dirname + '/webgui');
             this.apiApp.set('view engine', 'pug');
             this.initWebGui();
         }
 
-        this.apiApp.all(/.*/, (req: Request, res: Response) => res.status(404).send());
+        this.apiApp.all(/.*/, (_req: Request, res: Response) => res.status(404).send());
 
         this.apiApp.use((error: Error | AppError, req: Request, res: Response) => {
             const ctx: RequestContext | null = RequestContext.get(req);
@@ -152,7 +172,10 @@ export class API {
     }
 
     private initWebGui() {
-        this.apiApp.get('/webgui/rules', this.authReadOnly, async (req, res) => {
+        if (!this.apiApp) {
+            throw new Error('initialization error');
+        }
+        this.apiApp.get('/webgui/rules', this.authReadOnly, async (_req, res) => {
             const rules: Record<string, string> = {};
             for (const rule of await getRuleExecutor(this.options.mockUuid).getRules()) {
                 rules[rule.id] = serializeJavascript(liveRuleToRule(rule), { unsafe: true });
@@ -160,7 +183,7 @@ export class API {
             res.render('rules', { rules: escapedSerialize(rules), INDEX_DTS, ruleKeys: Object.keys(rules) });
         });
 
-        this.apiApp.get('/webgui/traffic', this.authReadOnly, async (req, res) => {
+        this.apiApp.get('/webgui/traffic', this.authReadOnly, async (_req, res) => {
             const serializedTraffic: Stuntman.LogEntry[] = [];
             for (const value of this.trafficStore.values()) {
                 serializedTraffic.push(value);
@@ -207,6 +230,10 @@ export class API {
     public start() {
         if (this.server) {
             throw new Error('mock server already started');
+        }
+        this.initApi();
+        if (!this.apiApp) {
+            throw new Error('initialization error');
         }
         this.server = this.apiApp.listen(this.options.port, () => {
             logger.info(`API listening on ${this.options.port}`);

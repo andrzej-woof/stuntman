@@ -3,19 +3,19 @@ import glob from 'glob';
 import * as tsImport from 'ts-import';
 import { catchAllRule } from './catchAll';
 import { echoRule } from './echo';
-import { serverConfig, logger } from '@stuntman/shared';
+import { stuntmanConfig, logger } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
 
 export const DEFAULT_RULES: Stuntman.DeployedRule[] = [catchAllRule, echoRule];
 export const CUSTOM_RULES: Stuntman.DeployedRule[] = [];
 
 const loadAdditionalRules = () => {
-    if (!serverConfig.mock.rulesPath || !fs.existsSync(serverConfig.mock.rulesPath)) {
-        logger.debug({ rulesPath: serverConfig.mock.rulesPath }, `additional rules directory not found`);
+    if (!stuntmanConfig.mock.rulesPath || !fs.existsSync(stuntmanConfig.mock.rulesPath)) {
+        logger.debug({ rulesPath: stuntmanConfig.mock.rulesPath }, `additional rules directory not found`);
         return;
     }
-    logger.debug({ rulesPath: serverConfig.mock.rulesPath }, `loading additional rules`);
-    const filePaths = glob.sync('*.[tj]s', { absolute: true, cwd: serverConfig.mock.rulesPath });
+    logger.debug({ rulesPath: stuntmanConfig.mock.rulesPath }, `loading additional rules`);
+    const filePaths = glob.sync('*.[tj]s', { absolute: true, cwd: stuntmanConfig.mock.rulesPath });
     for (const filePath of filePaths) {
         // TODO add .ts rule support
         try {

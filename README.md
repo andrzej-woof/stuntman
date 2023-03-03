@@ -1,5 +1,11 @@
 # Stuntman
 
+[![npm](https://img.shields.io/npm/v/@stuntman/server.svg)][npmjs]
+[![Build Status](https://img.shields.io/github/actions/workflow/status/andrzej-woof/stuntman/ci.yaml)][build]
+
+[npmjs]: https://www.npmjs.com/org/stuntman
+[build]: https://github.com/andrzej-woof/stuntman/actions/workflows/ci.yaml
+
 Stuntman is a proxy/mock server that can be deployed remotely together with your application under test, working as either pass-through proxy allowing you to inspect traffic or proxy/mock which can intercept requests/responses and modify them or stub with predefined ones.
 
 It offers API and client library that can be used for example within E2E functional test scripts to dynamically alter it's behaviour for specific traffic matching set of rules of your definition.
@@ -31,7 +37,7 @@ pnpm stuntman
 
 Stuntman uses [config](https://github.com/node-config/node-config)
 
-You can create `config/default.json` with settings of your liking matching `ServerConfig` type
+You can create `config/default.json` with settings of your liking matching `Stuntman.Config` type
 
 ## Running as a package
 
@@ -55,9 +61,9 @@ node ./node_modules/.bin/stuntman
 
 ```ts
 import { Mock } from '../mock';
-import { serverConfig } from '@stuntman/shared';
+import { stuntmanConfig } from '@stuntman/shared';
 
-const mock = new Mock(serverConfig);
+const mock = new Mock(stuntmanConfig);
 
 mock.start();
 ```
