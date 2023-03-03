@@ -15,8 +15,8 @@
     "test": "SUPPRESS_NO_CONFIG_WARNING=1 jest",
     "clean": "rm -fr dist",
     "build": "tsc && cp -rv src/api/webgui dist/api",
-    "lint": "prettier --check . && eslint . --ext ts",
-    "lint:fix": "prettier --write ./{src,test} && eslint ./{src,test} --ext ts --fix",
+    "lint": "prettier --check \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\"",
+    "lint:fix": "prettier --write \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\" --fix",
     "start": "node ./dist/bin/stuntman.js",
     "start:dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' ./src/bin/stuntman.ts",
     "start:debug": "node --inspect-brk=0.0.0.0 ./node_modules/.bin/ts-node --transpile-only ./src/bin/stuntman.ts"

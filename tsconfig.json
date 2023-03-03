@@ -30,7 +30,8 @@
     },
     "exclude": [
         "jest.config.js",
-        "./dist/**",
-        "./test/**"
+        "node_modules",
+        "**/node_modules",
+        "**/*/dist",
     ]
 }
