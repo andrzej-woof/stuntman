@@ -46,14 +46,22 @@ const defaultConfig: Config = {
     },
 };
 
-config.util.setModuleDefaults('stuntman', defaultConfig);
+let configFromFile: Config | null = null;
 
-let configFromFile = {} as Config;
-try {
-    configFromFile = config.get<Config>('stuntman');
-} catch (error) {
-    // eslint-disable-next-line no-console
-    console.warn('unable to find correct config - starting with defaults');
-}
-
-export const stuntmanConfig = configFromFile;
+export default {
+    get stuntmanConfig(): Config {
+        if (!configFromFile) {
+            config.util.setModuleDefaults('stuntman', defaultConfig);
+            try {
+                configFromFile = config.get<Config>('stuntman');
+            } catch (error) {
+                // eslint-disable-next-line no-console
+                console.warn('unable to find correct config - starting with defaults');
+            }
+        }
+        if (!configFromFile) {
+            throw new Error('error getting config');
+        }
+        return configFromFile;
+    },
+};
