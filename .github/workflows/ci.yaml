@@ -11,7 +11,7 @@ env:
   STUNTMAN_NPM_ACCESS_TOKEN: ${{ secrets.STUNTMAN_NPM_ACCESS_TOKEN }}
 
 jobs:
-  cache-and-install:
+  checks:
     runs-on: ubuntu-latest
 
     steps:
