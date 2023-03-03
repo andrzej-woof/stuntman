@@ -5,6 +5,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
+env:
+  STUNTMAN_NPM_ACCESS_TOKEN: ${{ secrets.STUNTMAN_NPM_ACCESS_TOKEN }}
+
 jobs:
   cache-and-install:
     runs-on: ubuntu-latest
