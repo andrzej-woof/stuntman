@@ -1,6 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import type * as Stuntman from '@stuntman/shared';
-import { RawHeaders } from '@stuntman/shared';
+import { RawHeaders, naiveGQLParser } from '@stuntman/shared';
 import { ruleBuilder } from '../src/ruleBuilder';
 import serializeJavascript from 'serialize-javascript';
 
@@ -966,8 +966,116 @@ describe('rule initialized', () => {
         });
 
         test('body gql', () => {
-            // TODO
-            // const builder = ruleBuilder().onAnyRequest();
+            const queryBody = {
+                query: 'query myOperation ($someId: String) { author(input: { id: $someId }) { id name } }',
+                operationName: 'myOperation',
+                variables: { $someId: '666777test' },
+            };
+            const gqlRequest: Stuntman.Request = {
+                id: '12345',
+                method: 'post',
+                rawHeaders: new RawHeaders(),
+                timestamp: Date.now(),
+                url: 'http://test.invalid/graphql',
+                body: JSON.stringify(queryBody),
+            };
+            gqlRequest.gqlBody = naiveGQLParser(gqlRequest.body);
+
+            let builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                operationName: 'myOperation',
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
+
+            expect(() =>
+                builder.withBodyGql({
+                    operationName: 'myOperation',
+                })
+            ).toThrow();
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                operationName: 'myOperation2',
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'operationName "myOperation2" !== "myOperation"',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                type: 'query',
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                type: 'mutation',
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'type "mutation" !== "query"',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                variables: [{ key: '$someId' }],
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                variables: [{ key: '$someId2' }],
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'GQL variable $someId2 != "undefined". Detail: $someId2=undefined',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                variables: [{ key: '$someId', value: '666777test' }],
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                variables: [{ key: '$someId', value: '666777test2' }],
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'GQL variable $someId != "666777test2". Detail: $someId === "666777test"',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                variables: [{ key: '$someId', value: /[0-9]+[A-Z]+/i }],
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                variables: [{ key: '$someId', value: /test[0-9]+nomatch/i }],
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'GQL variable $someId != "/test[0-9]+nomatch/i". Detail: $someId === "666777test"',
+                result: false,
+            });
         });
     });
 });

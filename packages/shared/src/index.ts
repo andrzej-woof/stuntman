@@ -5,6 +5,7 @@ export * from './logger';
 export * from './stringify';
 export * from './rawHeaders';
 export * from './config';
+export * from './gqlParser';
 
 import fs from 'fs';
 export const INDEX_DTS = fs.readFileSync(`${__dirname}/index.d.ts`, 'utf-8');

@@ -82,11 +82,11 @@ class RuleBuilderBaseBase {
                                 const result = shouldBeArray
                                     ? !Number.isInteger(arrayIndex) || actualValue.length >= Number(arrayIndex)
                                     : actualValue !== undefined;
-                                return { result, description: `${currentPath}` };
+                                return { result, description: `${currentPath} === undefined` };
                             }
                             if (!shouldBeArray) {
                                 const result = value instanceof RegExp ? value.test(actualValue) : value === actualValue;
-                                return { result, description: `${currentPath}` };
+                                return { result, description: `${currentPath} === "${actualValue}"` };
                             }
                         }
                         if (shouldBeArray) {
@@ -292,18 +292,17 @@ class RuleBuilderBaseBase {
                                 description: `type "${matchBuilderVariables.bodyGql.type}" !== "${req.gqlBody.type}"`,
                             };
                         }
-                        if (!matchBuilderVariables.bodyGql.variables) {
-                            return { result: true, description: `no variables to match` };
-                        }
-                        for (const jsonMatcher of Array.isArray(matchBuilderVariables.bodyGql.variables)
-                            ? matchBuilderVariables.bodyGql.variables
-                            : [matchBuilderVariables.bodyGql.variables]) {
-                            const matchObjectResult = matchObject(req.gqlBody.variables, jsonMatcher.key, jsonMatcher.value);
-                            if (!matchObjectResult.result) {
-                                return {
-                                    result: false,
-                                    description: `GQL variable ${jsonMatcher.key} != "${jsonMatcher.value}". Detail: ${matchObjectResult.description}`,
-                                };
+                        if (matchBuilderVariables.bodyGql.variables) {
+                            for (const jsonMatcher of Array.isArray(matchBuilderVariables.bodyGql.variables)
+                                ? matchBuilderVariables.bodyGql.variables
+                                : [matchBuilderVariables.bodyGql.variables]) {
+                                const matchObjectResult = matchObject(req.gqlBody.variables, jsonMatcher.key, jsonMatcher.value);
+                                if (!matchObjectResult.result) {
+                                    return {
+                                        result: false,
+                                        description: `GQL variable ${jsonMatcher.key} != "${jsonMatcher.value}". Detail: ${matchObjectResult.description}`,
+                                    };
+                                }
                             }
                         }
                     }
@@ -550,6 +549,9 @@ class RuleBuilderInitialized extends RuleBuilderBase {
     }
 
     withBodyGql(gqlMatcher: GQLRequestMatcher): RuleBuilderInitialized {
+        if (this._matchBuilderVariables.bodyGql) {
+            throw new Error('gqlMatcher already set');
+        }
         this._matchBuilderVariables.bodyGql = gqlMatcher;
         return this;
     }
