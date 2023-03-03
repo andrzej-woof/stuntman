@@ -48,7 +48,7 @@ const defaultConfig: Config = {
 
 let configFromFile: Config | null = null;
 
-export default {
+class ConfigWrapper {
     get stuntmanConfig(): Config {
         if (!configFromFile) {
             config.util.setModuleDefaults('stuntman', defaultConfig);
@@ -63,5 +63,8 @@ export default {
             throw new Error('error getting config');
         }
         return configFromFile;
-    },
-};
+    }
+}
+const configWrapper = new ConfigWrapper();
+
+export = configWrapper;
