@@ -96,9 +96,9 @@ describe('validateSerializedRuleProperties', () => {
                 expect(() => validateSerializedRuleProperties({ ...validSerializedRule1, matches: value })).toThrow();
             }
             for (const value of getTestValues('string')) {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
                 expect(() =>
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
                     validateSerializedRuleProperties({ ...validSerializedRule1, matches: { remoteFn: value } })
                 ).toThrow();
             }
@@ -114,9 +114,9 @@ describe('validateSerializedRuleProperties', () => {
 
         test('actions.mockResponse', async () => {
             for (const value of getTestValues(undefined, {})) {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
                 expect(() =>
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
                     validateSerializedRuleProperties({ ...validSerializedRule1, actions: { mockResponse: value } })
                 ).toThrow();
             }
@@ -124,9 +124,9 @@ describe('validateSerializedRuleProperties', () => {
 
         test('actions.mockResponse.remoteFn', async () => {
             for (const value of getTestValues('string')) {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
                 expect(() =>
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
                     validateSerializedRuleProperties({ ...validSerializedRule1, actions: { mockResponse: { remoteFn: value } } })
                 ).toThrow();
             }
@@ -134,8 +134,6 @@ describe('validateSerializedRuleProperties', () => {
 
         test('actions.mockResponse.status', async () => {
             for (const value of getTestValues(1234)) {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
                 expect(() =>
                     validateSerializedRuleProperties({ ...validSerializedRule1, actions: { mockResponse: { status: value } } })
                 ).toThrow();
@@ -158,6 +156,8 @@ describe('validateSerializedRuleProperties', () => {
             expect(() =>
                 validateSerializedRuleProperties({
                     ...validSerializedRule1,
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
                     actions: { mockResponse: { rawHeaders: [1234, 5678] } },
                 })
             ).toThrow();
