@@ -10,7 +10,7 @@ jest.mock('fs', () => ({
 
 test('app error', async () => {
     const appError = new AppError({ httpCode: HttpCode.CONFLICT, message: 'my error' });
-    expect(appError.stack).toMatch(/^\s*Error: my error\n\s*at new AppError.+appError\.ts/gm);
+    expect(appError.stack).toMatch(/^\s*Error: my error\n\s*at.+appError\.ts.*/gm);
     expect(appError.httpCode).toEqual(HttpCode.CONFLICT);
     expect(appError.name).toEqual('Error');
     expect(appError.message).toEqual('my error');

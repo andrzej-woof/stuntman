@@ -12,7 +12,7 @@
     "url": "https://github.com/andrzej-woof/stuntman/issues"
   },
   "scripts": {
-    "test": "SUPPRESS_NO_CONFIG_WARNING=1 jest",
+    "test": "SUPPRESS_NO_CONFIG_WARNING=1 jest --coverage",
     "clean": "rm -fr dist",
     "build": "tsc && cp -rv src/api/webgui dist/api",
     "lint": "prettier --check \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\"",

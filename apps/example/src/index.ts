@@ -10,6 +10,8 @@ import nodeFetch from 'node-fetch';
 import http from 'http';
 import https from 'https';
 
+// TODO collect mock server coverage
+
 const staticLookup = (
     hostname: string,
     _options: any,
