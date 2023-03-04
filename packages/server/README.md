@@ -1,4 +1,12 @@
-# Stuntman
+# Stuntman server
+
+[![npm](https://img.shields.io/npm/v/@stuntman/server.svg)][npmjs]
+[![Build Status](https://img.shields.io/github/actions/workflow/status/andrzej-woof/stuntman/ci.yaml)][build]
+[![Coverage Status](https://coveralls.io/repos/github/andrzej-woof/stuntman/badge.svg)][coverage]
+
+[npmjs]: https://www.npmjs.com/package/@stuntman/server
+[build]: https://github.com/andrzej-woof/stuntman/actions/workflows/ci.yaml
+[coverage]: https://coveralls.io/github/andrzej-woof/stuntman
 
 Stuntman is a proxy/mock server that can be deployed remotely together with your application under test, working as either pass-through proxy allowing you to inspect traffic or proxy/mock which can intercept requests/responses and modify them or stub with predefined ones.
 
