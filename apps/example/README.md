@@ -1,5 +1,10 @@
 # Stuntman proxy/mock example app
 
+[![Build Status](https://img.shields.io/github/actions/workflow/status/andrzej-woof/stuntman/ci.yaml)][build]
+![License](https://img.shields.io/github/license/andrzej-woof/stuntman)
+
+[build]: https://github.com/andrzej-woof/stuntman/actions/workflows/ci.yaml
+
 Example app for [Stunman](https://github.com/andrzej-woof/stuntman#readme)
 
 ```bash
