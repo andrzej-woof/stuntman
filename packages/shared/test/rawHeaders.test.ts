@@ -66,7 +66,6 @@ test('fromHeadersRecord', async () => {
         'empty',
         '',
     );
-    console.log(rawHeaders.toHeadersRecord());
     expect(rawHeaders.toHeadersRecord()).toEqual({
         someHeader: 'someValue',
         duplicated1: 'value11',

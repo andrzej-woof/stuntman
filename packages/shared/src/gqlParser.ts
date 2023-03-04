@@ -13,7 +13,12 @@ export const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody |
         if (!json?.query && !json?.operationName) {
             return undefined;
         }
-        const lines = json.query
+        const trimmed = json.query.trim();
+        if (!/^(query|mutation)\s+/.test(trimmed) || !/[{}]/.test(trimmed)) {
+            throw new Error('invalid query');
+        }
+        const lines = trimmed
+            .replace(/{/g, '{\n')
             .split('\n')
             .map((l) => l.replace(/^\s+/g, '').trim())
             .filter((l) => !!l);
@@ -24,8 +29,6 @@ export const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody |
             json.type = 'query';
         } else if (/^mutation /.test(lines[0])) {
             json.type = 'mutation';
-        } else {
-            throw new Error(`Unable to resolve query type of ${lines[0]}`);
         }
         if (json.operationName && lines[1]) {
             json.methodName = lines[1].split('(')[0]!.split('{')[0]!;
