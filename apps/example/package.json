@@ -1,7 +1,7 @@
 {
     "name": "@stuntman/example",
     "private": "true",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "description": "Stuntman - HTTP proxy / mock shared types and utils",
     "main": "dist/index.js",
     "repository": {
