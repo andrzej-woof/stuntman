@@ -5,13 +5,19 @@ export const validateSerializedRuleProperties = (rule: Stuntman.SerializedRule):
     if (!rule) {
         throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid serialized rule' });
     }
-    if (typeof rule.id !== 'string') {
+    // TODO make a nice regex to limit rule names
+    if (typeof rule.id !== 'string' || !rule.id.trim()) {
         throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.id' });
     }
-    if (typeof rule.matches !== 'object' || !('remoteFn' in rule.matches) || typeof rule.matches.remoteFn !== 'string') {
+    if (
+        typeof rule.matches !== 'object' ||
+        !('remoteFn' in rule.matches) ||
+        typeof rule.matches.remoteFn !== 'string' ||
+        !rule.matches.remoteFn.trim()
+    ) {
         throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.matches' });
     }
-    if (rule.priority && typeof rule.priority !== 'number') {
+    if (typeof rule.priority !== 'undefined' && (typeof rule.priority !== 'number' || rule.priority < 0)) {
         throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.priority' });
     }
     if (typeof rule.actions !== 'object') {
@@ -29,12 +35,24 @@ export const validateSerializedRuleProperties = (rule: Stuntman.SerializedRule):
         });
     }
     if (typeof rule.actions.mockResponse !== 'undefined') {
-        if (typeof rule.actions.mockResponse !== 'object') {
+        if (typeof rule.actions.mockResponse !== 'object' || Array.isArray(rule.actions.mockResponse)) {
             throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.actions.mockResponse' });
         }
-        if ('remoteFn' in rule.actions.mockResponse && typeof rule.actions.mockResponse.remoteFn !== 'string') {
+        if (
+            'remoteFn' in rule.actions.mockResponse &&
+            ('rawHeaders' in rule.actions.mockResponse ||
+                'status' in rule.actions.mockResponse ||
+                'body' in rule.actions.mockResponse)
+        ) {
             throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.actions.mockResponse' });
-        } else if ('status' in rule.actions.mockResponse) {
+        }
+        if (
+            'remoteFn' in rule.actions.mockResponse &&
+            (typeof rule.actions.mockResponse.remoteFn !== 'string' || !rule.actions.mockResponse.remoteFn.trim())
+        ) {
+            throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.actions.mockResponse' });
+        }
+        if (!('remoteFn' in rule.actions.mockResponse)) {
             if (typeof rule.actions.mockResponse.status !== 'number') {
                 throw new AppError({
                     httpCode: HttpCode.BAD_REQUEST,
@@ -44,6 +62,7 @@ export const validateSerializedRuleProperties = (rule: Stuntman.SerializedRule):
             if (
                 typeof rule.actions.mockResponse.rawHeaders !== 'undefined' &&
                 (!Array.isArray(rule.actions.mockResponse.rawHeaders) ||
+                    rule.actions.mockResponse.rawHeaders.length % 2 !== 0 ||
                     rule.actions.mockResponse.rawHeaders.some((header) => typeof header !== 'string'))
             ) {
                 throw new AppError({
@@ -88,7 +107,12 @@ export const validateSerializedRuleProperties = (rule: Stuntman.SerializedRule):
             message: 'rule.actions.mockResponse and rule.actions.modifyResponse are mutually exclusive',
         });
     }
-    if (!rule.ttlSeconds || rule.ttlSeconds < MIN_RULE_TTL_SECONDS || rule.ttlSeconds > MAX_RULE_TTL_SECONDS) {
+    if (
+        !rule.ttlSeconds ||
+        typeof rule.ttlSeconds !== 'number' ||
+        rule.ttlSeconds < MIN_RULE_TTL_SECONDS ||
+        rule.ttlSeconds > MAX_RULE_TTL_SECONDS
+    ) {
         throw new AppError({
             httpCode: HttpCode.BAD_REQUEST,
             message: `rule.ttlSeconds should be within ${MIN_RULE_TTL_SECONDS} and ${MAX_RULE_TTL_SECONDS}`,
