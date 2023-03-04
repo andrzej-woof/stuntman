@@ -58,3 +58,38 @@ jobs:
 
       - name: Integration tests
         run: pnpm test:example
+
+      - name: Coveralls - @stuntman/shared
+        uses: coverallsapp/github-action@v1
+        with:
+          flag-name: unit-shared
+          path-to-lcov: packages/shared/coverage/lcov.info
+          base-path: packages/shared
+          parallel: true
+
+      - name: Coveralls - @stuntman/client
+        uses: coverallsapp/github-action@v1
+        with:
+          flag-name: unit-client
+          path-to-lcov: packages/client/coverage/lcov.info
+          base-path: packages/client
+          parallel: true
+
+      - name: Coveralls - @stuntman/server
+        uses: coverallsapp/github-action@v1
+        with:
+          flag-name: unit-server
+          path-to-lcov: packages/server/coverage/lcov.info
+          base-path: packages/server
+          parallel: true
+
+  finish:
+    needs: checks
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: coverallsapp/github-action@v1
+      with:
+        parallel-finished: true
+        carryforward: "unit-shared,unit-client,unit-server"
