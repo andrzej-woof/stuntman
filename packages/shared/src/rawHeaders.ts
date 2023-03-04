@@ -22,20 +22,20 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
     }
 
     set(name: string, value: string): void {
-        let foundHeaders = 0;
+        let foundIndex = -1;
         for (let headerIndex = 0; headerIndex < this.length; headerIndex += 2) {
             if (this[headerIndex]?.toLowerCase() === name.toLowerCase()) {
-                this[headerIndex + 1] = value;
-                ++foundHeaders;
+                if (foundIndex !== -1) {
+                    throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
+                }
+                foundIndex = headerIndex;
             }
         }
-        if (foundHeaders === 0) {
+        if (foundIndex === -1) {
             this.add(name, value);
             return;
         }
-        if (foundHeaders > 1) {
-            throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
-        }
+        this[foundIndex + 1] = value;
     }
 
     add(name: string, value: string): void {
@@ -45,21 +45,27 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
 
     remove(name: string): void {
         const headersCopy = [...this];
-        let foundHeaders = 0;
+        let foundIndex = -1;
         for (let headerIndex = 0; headerIndex < headersCopy.length; headerIndex += 2) {
-            if (this[headerIndex - foundHeaders * 2]?.toLowerCase() === name.toLowerCase()) {
-                delete this[headerIndex];
-                delete this[headerIndex];
-                ++foundHeaders;
+            if (this[headerIndex]?.toLowerCase() === name.toLowerCase()) {
+                if (foundIndex !== -1) {
+                    throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
+                }        
+                foundIndex = headerIndex;
             }
         }
-        if (foundHeaders > 1) {
-            throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
+        if (foundIndex === -1) {
+            return;
         }
+        this.splice(foundIndex, 2);
     }
 
     toHeaderPairs(): readonly [string, string][] {
         return RawHeaders.toHeaderPairs(this);
+    }
+
+    toHeadersRecord(): Record<string, string | string[]> {
+        return RawHeaders.toHeadersRecord(this);
     }
 
     static fromHeaderPairs(headerPairs: [string, string][]): RawHeaders {
@@ -75,6 +81,24 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
             }
             for (const subValue of value) {
                 output.add(key, subValue);
+            }
+        }
+        return output;
+    }
+
+    static toHeadersRecord(rawHeaders: RawHeaders): Record<string, string | string[]> {
+        const output: Record<string, string | string[]> = {};
+        const headerPairs = rawHeaders.toHeaderPairs();
+        for (const [key, value] of headerPairs) {
+            if (!output[key]) {
+                output[key] = value;
+                continue;
+            } else if (typeof output[key] === 'string') {
+                output[key] = [output[key] as string, value];
+            } else if (Array.isArray(output[key])) {
+                (output[key] as string[]).push(value);
+            } else {
+                throw new Error('unexpected error');
             }
         }
         return output;
