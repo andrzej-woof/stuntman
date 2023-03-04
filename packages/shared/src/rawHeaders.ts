@@ -50,7 +50,7 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
             if (this[headerIndex]?.toLowerCase() === name.toLowerCase()) {
                 if (foundIndex !== -1) {
                     throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
-                }        
+                }
                 foundIndex = headerIndex;
             }
         }

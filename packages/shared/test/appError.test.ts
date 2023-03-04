@@ -29,4 +29,3 @@ test('isOperational', async () => {
     expect(`${appError}`).toEqual('Error: my error');
     expect(appError).toBeInstanceOf(Error);
 });
-

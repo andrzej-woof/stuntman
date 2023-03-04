@@ -10,7 +10,11 @@ test('naiveGQLParser', async () => {
         methodName: 'author',
     };
     expect(naiveGQLParser(JSON.stringify(queryBody))).toEqual(queryBody);
-    expect(naiveGQLParser(JSON.stringify({ ...queryBody, query: queryBody.query.replace(/^query/, 'mutation') }))).toEqual({ ...queryBody, type: 'mutation', query: queryBody.query.replace(/^query/, 'mutation') });
+    expect(naiveGQLParser(JSON.stringify({ ...queryBody, query: queryBody.query.replace(/^query/, 'mutation') }))).toEqual({
+        ...queryBody,
+        type: 'mutation',
+        query: queryBody.query.replace(/^query/, 'mutation'),
+    });
 });
 
 test('invalid body', async () => {
@@ -18,5 +22,9 @@ test('invalid body', async () => {
     expect(naiveGQLParser(JSON.stringify({ someObject: 'someValue' }))).toBeUndefined();
     expect(naiveGQLParser(JSON.stringify({ query: 'someValue' }))).toBeUndefined();
     expect(naiveGQLParser(JSON.stringify({ query: 'query broken' }))).toBeUndefined();
-    expect(naiveGQLParser(JSON.stringify({ query: 'querybroken myOperation ($someId: String) { author(input: { id: $someId }) { id name } }' }))).toBeUndefined();
+    expect(
+        naiveGQLParser(
+            JSON.stringify({ query: 'querybroken myOperation ($someId: String) { author(input: { id: $someId }) { id name } }' })
+        )
+    ).toBeUndefined();
 });
