@@ -19,13 +19,13 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
     private _rules: Stuntman.LiveRule[];
     private rulesLock = new AwaitLock();
 
-    private get enabledRules() {
+    private get enabledRules(): readonly Stuntman.LiveRule[] {
         if (!this._rules) {
-            return new Array<Stuntman.LiveRule>();
+            this._rules = new Array<Stuntman.LiveRule>();
         }
         const now = Date.now();
         return this._rules
-            .filter((r) => (r.isEnabled && !Number.isFinite(r.ttlSeconds)) || r.createdTimestamp + r.ttlSeconds * 1000 > now)
+            .filter((r) => r.isEnabled && (!Number.isFinite(r.ttlSeconds) || r.createdTimestamp + r.ttlSeconds * 1000 > now))
             .sort((a, b) => (a.priority ?? DEFAULT_RULE_PRIORITY) - (b.priority ?? DEFAULT_RULE_PRIORITY));
     }
 
@@ -101,8 +101,9 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
     enableRule(id: string): void;
     enableRule(rule: Stuntman.Rule): void;
     enableRule(ruleOrId: string | Stuntman.Rule): void {
+        const ruleId = typeof ruleOrId === 'string' ? ruleOrId : ruleOrId.id;
         this._rules.forEach((r) => {
-            if (r.id === (typeof ruleOrId === 'string' ? ruleOrId : ruleOrId.id)) {
+            if (r.id === ruleId) {
                 r.counter = 0;
                 r.isEnabled = true;
                 logger.debug({ ruleId: r.id }, 'rule enabled');
@@ -113,8 +114,9 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
     disableRule(id: string): void;
     disableRule(rule: Stuntman.Rule): void;
     disableRule(ruleOrId: string | Stuntman.Rule): void {
+        const ruleId = typeof ruleOrId === 'string' ? ruleOrId : ruleOrId.id;
         this._rules.forEach((r) => {
-            if (r.id === (typeof ruleOrId === 'string' ? ruleOrId : ruleOrId.id)) {
+            if (r.id === ruleId) {
                 r.isEnabled = false;
                 logger.debug({ ruleId: r.id }, 'rule disabled');
             }
@@ -134,7 +136,7 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
                 }
                 return matchResult.result;
             } catch (error) {
-                logger.error({ ...logContext, ruleId: rule?.id, error }, 'error in rule match function');
+                logger.error({ ...logContext, ruleId: rule.id, error }, 'error in rule match function');
             }
             return undefined;
         });
@@ -155,15 +157,14 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
             matchingRule.counter = 0;
             logger.warn(logContext, "it's over 9000!!!");
         }
-        // TODO check if that works
         if (matchingRule.disableAfterUse) {
-            if (typeof matchingRule.disableAfterUse === 'boolean' || matchingRule.disableAfterUse <= matchingRule.counter) {
+            if (matchingRule.disableAfterUse === true || matchingRule.disableAfterUse <= matchingRule.counter) {
                 logger.debug(logContext, 'disabling rule for future requests');
-                this.disableRule(matchingRule);
+                matchingRule.isEnabled = false;
             }
         }
         if (matchingRule.removeAfterUse) {
-            if (typeof matchingRule.removeAfterUse === 'boolean' || matchingRule.removeAfterUse <= matchingRule.counter) {
+            if (matchingRule.removeAfterUse === true || matchingRule.removeAfterUse <= matchingRule.counter) {
                 logger.debug(logContext, 'removing rule for future requests');
                 await this.removeRule(matchingRule);
             }
@@ -179,10 +180,7 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
                 }
             }
             if (matchResult.enableRuleIds && matchResult.enableRuleIds.length > 0) {
-                logger.debug(
-                    { ...logContext, disableRuleIds: matchResult.disableRuleIds },
-                    'enabling rules based on matchResult'
-                );
+                logger.debug({ ...logContext, disableRuleIds: matchResult.enableRuleIds }, 'enabling rules based on matchResult');
                 for (const ruleId of matchResult.enableRuleIds) {
                     this.enableRule(ruleId);
                 }
