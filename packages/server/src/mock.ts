@@ -6,16 +6,12 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getRuleExecutor } from './ruleExecutor';
 import { getTrafficStore } from './storage';
-import { RawHeaders, logger, HttpCode, naiveGQLParser, escapeStringRegexp, errorToLog } from '@stuntman/shared';
-import RequestContext from './requestContext';
+import { RawHeaders, logger, HttpCode, naiveGQLParser, escapeStringRegexp, errorToLog, HTTP_METHODS } from '@stuntman/shared';
+import { RequestContext } from './requestContext';
 import type * as Stuntman from '@stuntman/shared';
 import { IPUtils } from './ipUtils';
 import LRUCache from 'lru-cache';
 import { API } from './api/api';
-
-type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
-    [Property in Key]-?: Type[Property];
-};
 
 // TODO add proper web proxy mode
 
@@ -31,7 +27,7 @@ export class Mock {
     protected ipUtils: IPUtils | null = null;
     private _api: API | null = null;
 
-    get apiServer() {
+    protected get apiServer() {
         if (this.options.api.disabled) {
             return null;
         }
@@ -71,6 +67,44 @@ export class Mock {
                 : new IPUtils({ mockUuid: this.mockUuid, externalDns: this.options.mock.externalDns });
 
         this.requestHandler = this.requestHandler.bind(this);
+        this.bindRequestContext = this.bindRequestContext.bind(this);
+        this.errorHandler = this.errorHandler.bind(this);
+    }
+
+    private extractJwt(req: Stuntman.Request): any {
+        try {
+            const authorizationHeaderIndex = req.rawHeaders.findIndex((header) => header.toLowerCase() === 'authorization');
+            if (authorizationHeaderIndex < 0) {
+                return { result: false, description: 'missing authorization header' };
+            }
+            const authorizationHeaderValue = req.rawHeaders[authorizationHeaderIndex + 1];
+            const token =
+                authorizationHeaderValue &&
+                (authorizationHeaderValue.startsWith('Bearer ')
+                    ? authorizationHeaderValue.split(' ')[1]
+                    : authorizationHeaderValue);
+            if (!token) {
+                return undefined;
+            }
+            const base64Url = token.split('.')[1];
+            if (!base64Url) {
+                return undefined;
+            }
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                Buffer.from(base64, 'base64')
+                    .toString('ascii')
+                    .split('')
+                    .map(function (c) {
+                        return `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`;
+                    })
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        } catch (error) {
+            // TODO
+        }
+        return undefined;
     }
 
     private async requestHandler(req: express.Request, res: express.Response): Promise<void> {
@@ -80,11 +114,11 @@ export class Mock {
         const originalHostname = req.headers.host || req.hostname;
         const unproxiedHostname = req.hostname.replace(this.MOCK_DOMAIN_REGEX, '');
         const isProxiedHostname = originalHostname !== unproxiedHostname;
-        const originalRequest = {
+        const originalRequest: Stuntman.Request = {
             id: requestUuid,
             timestamp,
             url: `${req.protocol}://${req.hostname}${req.originalUrl}`,
-            method: req.method,
+            method: req.method.toUpperCase() as Stuntman.HttpMethod,
             rawHeaders: new RawHeaders(...req.rawHeaders),
             ...((Buffer.isBuffer(req.body) && { body: req.body.toString('utf-8') }) ||
                 (typeof req.body === 'string' && { body: req.body })),
@@ -93,19 +127,20 @@ export class Mock {
         const logContext: Record<string, any> = {
             requestId: originalRequest.id,
         };
-        const mockEntry: WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'> = {
+        const mockEntry: Stuntman.WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'> = {
             originalRequest,
             modifiedRequest: {
                 ...this.unproxyRequest(req),
                 id: requestUuid,
                 timestamp,
                 ...(originalRequest.body && { gqlBody: naiveGQLParser(originalRequest.body) }),
+                jwt: this.extractJwt(originalRequest),
             },
         };
         if (!isProxiedHostname) {
             this.removeProxyPort(mockEntry.modifiedRequest);
         }
-        const matchingRule = await getRuleExecutor(this.mockUuid).findMatchingRule(mockEntry.modifiedRequest);
+        const matchingRule = await this.ruleExecutor.findMatchingRule(mockEntry.modifiedRequest);
         if (matchingRule) {
             mockEntry.mockRuleId = matchingRule.id;
             mockEntry.labels = matchingRule.labels;
@@ -206,7 +241,27 @@ export class Mock {
         res.end(Buffer.from(modifedResponse.body, 'binary'));
     }
 
-    init() {
+    private bindRequestContext(req: express.Request, _res: express.Response, next: express.NextFunction) {
+        RequestContext.bind(req, this.mockUuid);
+        next();
+    }
+
+    private errorHandler(error: Error, req: express.Request, res: express.Response) {
+        const ctx: RequestContext | null = RequestContext.get(req);
+        const uuid = ctx?.uuid || uuidv4();
+        logger.error({ error: errorToLog(error), uuid }, 'unexpected error');
+        if (res) {
+            res.status(HttpCode.INTERNAL_SERVER_ERROR).json({
+                error: { message: error.message, httpCode: HttpCode.INTERNAL_SERVER_ERROR, uuid },
+            });
+            return;
+        }
+        // eslint-disable-next-line no-console
+        console.error('mock server encountered a critical error. exiting');
+        process.exit(1);
+    }
+
+    private init() {
         if (this.mockApp) {
             return;
         }
@@ -214,32 +269,16 @@ export class Mock {
         // TODO for now request body is just a buffer passed further, not inflated
         this.mockApp.use(express.raw({ type: '*/*' }));
 
-        this.mockApp.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
-            RequestContext.bind(req, this.mockUuid);
-            next();
-        });
+        this.mockApp.use(this.bindRequestContext);
 
         this.mockApp.all(/.*/, this.requestHandler);
 
-        this.mockApp.use((error: Error, req: express.Request, res: express.Response) => {
-            const ctx: RequestContext | null = RequestContext.get(req);
-            const uuid = ctx?.uuid || uuidv4();
-            logger.error({ error: errorToLog(error), uuid }, 'unexpected error');
-            if (res) {
-                res.status(HttpCode.INTERNAL_SERVER_ERROR).json({
-                    error: { message: error.message, httpCode: HttpCode.INTERNAL_SERVER_ERROR, uuid },
-                });
-                return;
-            }
-            // eslint-disable-next-line no-console
-            console.error('mock server encountered a critical error. exiting');
-            process.exit(1);
-        });
+        this.mockApp.use(this.errorHandler);
     }
 
     private async proxyRequest(
         req: express.Request,
-        mockEntry: WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'>,
+        mockEntry: Stuntman.WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'>,
         logContext: any
     ) {
         let controller: AbortController | null = new AbortController();
@@ -260,7 +299,7 @@ export class Mock {
             const requestOptions = {
                 headers: mockEntry.modifiedRequest.rawHeaders,
                 body: mockEntry.modifiedRequest.body,
-                method: mockEntry.modifiedRequest.method.toUpperCase() as Dispatcher.HttpMethod,
+                method: mockEntry.modifiedRequest.method,
             };
             logger.debug(
                 {
@@ -270,6 +309,7 @@ export class Mock {
                 },
                 'outgoing request attempt'
             );
+            // TODO migrate to node-libcurl
             targetResponse = await fetchRequest(mockEntry.modifiedRequest.url, requestOptions);
         } catch (error) {
             logger.error(
@@ -319,30 +359,90 @@ export class Mock {
         });
     }
 
-    public stop() {
+    public async stop(): Promise<void> {
+        const closePromises: Promise<void>[] = [];
         if (!this.server) {
             throw new Error('mock server not started');
         }
         if (!this.options.api.disabled) {
-            this.apiServer?.stop();
+            if (!this.apiServer) {
+                logger.warn('no api server');
+            } else {
+                closePromises.push(
+                    new Promise<void>((resolve) => {
+                        if (!this.apiServer) {
+                            resolve();
+                            return;
+                        }
+                        this.apiServer
+                            .stop()
+                            .then(() => resolve())
+                            .catch((error) => {
+                                logger.error(error, 'problem closing api server');
+                                resolve();
+                            });
+                    })
+                );
+            }
         }
-        this.server.close((error) => {
-            logger.warn(error, 'problem closing server');
-            this.server = null;
-        });
+        closePromises.push(
+            new Promise<void>((resolve) => {
+                if (!this.server) {
+                    resolve();
+                    return;
+                }
+                this.server.close((error) => {
+                    if (error) {
+                        logger.warn(error, 'problem closing http server');
+                    }
+                    this.server = null;
+                    resolve();
+                });
+            })
+        );
+        if (this.serverHttps) {
+            closePromises.push(
+                new Promise<void>((resolve) => {
+                    if (!this.serverHttps) {
+                        resolve();
+                        return;
+                    }
+                    this.serverHttps.close((error) => {
+                        if (error) {
+                            logger.warn(error, 'problem closing https server');
+                        }
+                        this.server = null;
+                        resolve();
+                    });
+                })
+            );
+        }
+        await Promise.all(closePromises);
     }
 
     protected unproxyRequest(req: express.Request): Stuntman.BaseRequest {
         const protocol = (this.MOCK_DOMAIN_REGEX.exec(req.hostname) || [])[2] || req.protocol;
         const port = (this.MOCK_DOMAIN_REGEX.exec(req.hostname) || [])[1] || undefined;
 
+        if (!HTTP_METHODS.includes(req.method.toUpperCase() as Stuntman.HttpMethod)) {
+            throw new Error(`unrecognized http method "${req.method}"`);
+        }
+
         // TODO unproxied req might fail if there's a signed url :shrug:
         // but then we can probably switch DNS for some particular 3rd party server to point to mock
         // and in mock have a mapping rule for that domain to point directly to some IP :thinking:
         return {
             url: `${protocol}://${req.hostname.replace(this.MOCK_DOMAIN_REGEX, '')}${port ? `:${port}` : ''}${req.originalUrl}`,
-            rawHeaders: new RawHeaders(...req.rawHeaders.map((h) => h.replace(this.MOCK_DOMAIN_REGEX, ''))),
-            method: req.method,
+            rawHeaders: new RawHeaders(
+                ...req.rawHeaders.map((h) => {
+                    let outputHeader = h;
+                    if (this.MOCK_DOMAIN_REGEX.test(outputHeader)) {
+                        outputHeader = outputHeader.replace(this.MOCK_DOMAIN_REGEX, '').replace(/^https?/i, protocol);
+                    }
+                    return outputHeader;
+                })
+            ),
+            method: req.method.toUpperCase() as Stuntman.HttpMethod,
             ...(Buffer.isBuffer(req.body) && { body: req.body.toString('utf-8') }),
         };
     }

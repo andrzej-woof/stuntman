@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/stuntman",
-    "version": "0.2.1",
+    "version": "0.2.3",
     "description": "Stuntman - HTTP proxy / mock with API and client libraries",
     "private": true,
     "main": "index.js",

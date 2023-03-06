@@ -1,8 +1,9 @@
 {
     "name": "@stuntman/shared",
-    "version": "0.2.1",
+    "version": "0.2.3",
     "description": "Stuntman - HTTP proxy / mock shared types and utils",
     "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "repository": {
         "type": "git",
         "url": "https://github.com/andrzej-woof/stuntman.git"
