@@ -3,7 +3,7 @@ import express, { NextFunction, Request, Response, Express as ExpressServer } fr
 import { v4 as uuidv4 } from 'uuid';
 import { getTrafficStore } from '../storage';
 import { getRuleExecutor } from '../ruleExecutor';
-import { logger, AppError, HttpCode, MAX_RULE_TTL_SECONDS, stringify, INDEX_DTS } from '@stuntman/shared';
+import { logger, AppError, HttpCode, MAX_RULE_TTL_SECONDS, stringify, INDEX_DTS, errorToLog } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
 import RequestContext from '../requestContext';
 import serializeJavascript from 'serialize-javascript';
@@ -158,7 +158,7 @@ export class API {
                 });
                 return;
             }
-            logger.error({ message: error.message, stack: error.stack, name: error.name, uuid }, 'unexpected error');
+            logger.error({ error: errorToLog(error), uuid }, 'unexpected error');
             if (res) {
                 res.status(HttpCode.INTERNAL_SERVER_ERROR).json({
                     error: { message: error.message, httpCode: HttpCode.INTERNAL_SERVER_ERROR, uuid },

@@ -6,7 +6,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getRuleExecutor } from './ruleExecutor';
 import { getTrafficStore } from './storage';
-import { RawHeaders, logger, HttpCode, naiveGQLParser, escapeStringRegexp } from '@stuntman/shared';
+import { RawHeaders, logger, HttpCode, naiveGQLParser, escapeStringRegexp, errorToLog } from '@stuntman/shared';
 import RequestContext from './requestContext';
 import type * as Stuntman from '@stuntman/shared';
 import { IPUtils } from './ipUtils';
@@ -148,7 +148,7 @@ export class Mock {
                 }
             } catch (error) {
                 // swallow the exeception, don't think much can be done at this point
-                logger.warn({ ...logContext, error }, `error trying to resolve IP for "${hostname}"`);
+                logger.warn({ ...logContext, error: errorToLog(error as Error) }, `error trying to resolve IP for "${hostname}"`);
             }
         }
 
@@ -224,7 +224,7 @@ export class Mock {
         this.mockApp.use((error: Error, req: express.Request, res: express.Response) => {
             const ctx: RequestContext | null = RequestContext.get(req);
             const uuid = ctx?.uuid || uuidv4();
-            logger.error({ message: error.message, stack: error.stack, name: error.name, uuid }, 'unexpected error');
+            logger.error({ error: errorToLog(error), uuid }, 'unexpected error');
             if (res) {
                 res.status(HttpCode.INTERNAL_SERVER_ERROR).json({
                     error: { message: error.message, httpCode: HttpCode.INTERNAL_SERVER_ERROR, uuid },
@@ -272,7 +272,10 @@ export class Mock {
             );
             targetResponse = await fetchRequest(mockEntry.modifiedRequest.url, requestOptions);
         } catch (error) {
-            logger.error({ ...logContext, error, request: mockEntry.modifiedRequest }, 'error fetching');
+            logger.error(
+                { ...logContext, error: errorToLog(error as Error), request: mockEntry.modifiedRequest },
+                'error fetching'
+            );
             throw error;
         } finally {
             controller = null;

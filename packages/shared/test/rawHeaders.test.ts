@@ -64,7 +64,7 @@ test('fromHeaderPairs', async () => {
     expect(rawHeaders).toEqual(['ok', 'valueok', 'test', 'value', 'TEST', 'VALUE', 'TeSt', 'VaLuE']);
 });
 
-test('fromHeadersRecord', async () => {
+test('toHeadersRecord', async () => {
     const rawHeaders = new RawHeaders(
         'someHeader',
         'someValue',
@@ -88,6 +88,8 @@ test('fromHeadersRecord', async () => {
         duplicated2: ['value21', 'value22', 'value23'],
         empty: '',
     });
+    // @ts-expect-error invalid header record
+    expect(() => RawHeaders.toHeadersRecord(new RawHeaders('test', { some: 'object' }, 'test', 'value2'))).toThrow();
 });
 
 test('fromHeadersRecord', async () => {

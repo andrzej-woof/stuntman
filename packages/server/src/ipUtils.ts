@@ -1,7 +1,7 @@
 import { networkInterfaces } from 'os';
 import dns, { Resolver as DNSResolver } from 'node:dns';
 import { getDnsResolutionCache } from './storage';
-import { logger } from '@stuntman/shared';
+import { errorToLog, logger } from '@stuntman/shared';
 
 const localhostIPs: string[] = ['127.0.0.1'];
 const IP_WITH_OPTIONAL_PORT_REGEX = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(:[0-9]+)?$/i;
@@ -40,7 +40,7 @@ export class IPUtils {
         return new Promise<[string, ...string[]]>((resolve, reject) => {
             const callback = (error: NodeJS.ErrnoException | null, addresses: string | string[]) => {
                 if (error) {
-                    logger.debug({ error, hostname }, 'error resolving hostname');
+                    logger.debug({ error: errorToLog(error), hostname }, 'error resolving hostname');
                     reject(error);
                     return;
                 }

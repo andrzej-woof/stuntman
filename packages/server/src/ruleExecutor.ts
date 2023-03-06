@@ -1,5 +1,5 @@
 import AwaitLock from 'await-lock';
-import { AppError, DEFAULT_RULE_PRIORITY, HttpCode, logger } from '@stuntman/shared';
+import { AppError, DEFAULT_RULE_PRIORITY, HttpCode, errorToLog, logger } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
 import { CUSTOM_RULES, DEFAULT_RULES } from './rules';
 
@@ -136,7 +136,10 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
                 }
                 return matchResult.result;
             } catch (error) {
-                logger.error({ ...logContext, ruleId: rule.id, error }, 'error in rule match function');
+                logger.error(
+                    { ...logContext, ruleId: rule.id, error: errorToLog(error as Error) },
+                    'error in rule match function'
+                );
             }
             return undefined;
         });
@@ -200,11 +203,15 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
     }
 }
 
-export const getRuleExecutor = (mockUuid: string): RuleExecutor => {
+export const getRuleExecutor = (mockUuid: string, overrideRules?: Stuntman.DeployedRule[]): RuleExecutor => {
     if (!ruleExecutors[mockUuid]) {
-        ruleExecutors[mockUuid] = new RuleExecutor(
-            [...DEFAULT_RULES, ...CUSTOM_RULES].map((r) => ({ ...r, ttlSeconds: Infinity }))
-        );
+        if (overrideRules === null) {
+            ruleExecutors[mockUuid] = new RuleExecutor();
+        } else {
+            ruleExecutors[mockUuid] = new RuleExecutor(
+                (overrideRules ?? [...DEFAULT_RULES, ...CUSTOM_RULES]).map((r) => ({ ...r, ttlSeconds: Infinity }))
+            );
+        }
     }
     return ruleExecutors[mockUuid]!;
 };

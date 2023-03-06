@@ -8,7 +8,7 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
             return undefined;
         }
         if (matchingHeaders.length === 1) {
-            return matchingHeaders[0]?.[1];
+            return matchingHeaders[0]![1];
         }
         throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
     }
@@ -24,7 +24,7 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
     set(name: string, value: string): void {
         let foundIndex = -1;
         for (let headerIndex = 0; headerIndex < this.length; headerIndex += 2) {
-            if (this[headerIndex]?.toLowerCase() === name.toLowerCase()) {
+            if (this[headerIndex]!.toLowerCase() === name.toLowerCase()) {
                 if (foundIndex !== -1) {
                     throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
                 }
@@ -47,7 +47,7 @@ export class RawHeaders extends Array<string> implements Stuntman.RawHeadersInte
         const headersCopy = [...this];
         let foundIndex = -1;
         for (let headerIndex = 0; headerIndex < headersCopy.length; headerIndex += 2) {
-            if (this[headerIndex]?.toLowerCase() === name.toLowerCase()) {
+            if (this[headerIndex]!.toLowerCase() === name.toLowerCase()) {
                 if (foundIndex !== -1) {
                     throw new Error('Multiple headers with same name. Manipulate rawHeaders instead');
                 }

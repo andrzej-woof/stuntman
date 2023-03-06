@@ -52,12 +52,7 @@ class ConfigWrapper {
     get stuntmanConfig(): Config {
         if (!configFromFile) {
             config.util.setModuleDefaults('stuntman', defaultConfig);
-            try {
-                configFromFile = config.get<Config>('stuntman');
-            } catch (error) {
-                // eslint-disable-next-line no-console
-                console.warn('unable to find correct config - starting with defaults');
-            }
+            configFromFile = config.get<Config>('stuntman');
         }
         if (!configFromFile) {
             throw new Error('error getting config');

@@ -22,18 +22,13 @@ export const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody |
             .split('\n')
             .map((l) => l.replace(/^\s+/g, '').trim())
             .filter((l) => !!l);
-        if (!lines[0]) {
-            throw new Error('unable to find query');
-        }
-        if (/^query /.test(lines[0])) {
+        if (/^query /.test(lines[0]!)) {
             json.type = 'query';
-        } else if (/^mutation /.test(lines[0])) {
+        } else if (/^mutation /.test(lines[0]!)) {
             json.type = 'mutation';
         }
         if (json.operationName && lines[1]) {
             json.methodName = lines[1].split('(')[0]!.split('{')[0]!;
-        } else if (json.operationName) {
-            json.methodName = lines[0].split('(')[0]!.split('{')[0]!;
         }
         return json;
     } catch (error) {

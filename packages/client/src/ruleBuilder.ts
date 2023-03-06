@@ -25,10 +25,264 @@ type MatchBuilderVariables = {
     bodyGql?: GQLRequestMatcher;
 };
 
-// eslint-disable-next-line no-var
-declare var matchBuilderVariables: MatchBuilderVariables;
-
 // TODO add fluent match on multipart from data
+function matchFunction(req: Stuntman.Request): Stuntman.RuleMatchResult {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const localMatchBuilderVariables: MatchBuilderVariables = this?.matchBuilderVariables ?? matchBuilderVariables;
+    const ___url = new URL(req.url);
+    const ___headers = req.rawHeaders;
+    const arrayIndexerRegex = /\[(?<arrayIndex>[0-9]*)\]/i;
+    const matchObject = (
+        obj: any,
+        path: string,
+        value?: string | RegExp | number | boolean | null,
+        parentPath?: string
+    ): Exclude<Stuntman.RuleMatchResult, boolean> => {
+        if (!obj) {
+            return { result: false, description: `${parentPath} is falsey` };
+        }
+        const [rawKey, ...rest] = path.split('.');
+        const key = (rawKey ?? '').replace(arrayIndexerRegex, '');
+        const shouldBeArray = rawKey ? arrayIndexerRegex.test(rawKey) : false;
+        const arrayIndex =
+            rawKey && (arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex || '').length > 0
+                ? Number(arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex)
+                : Number.NaN;
+        const actualValue = key ? obj[key] : obj;
+        const currentPath = `${parentPath ? `${parentPath}.` : ''}${rawKey}`;
+        if (value === undefined && actualValue === undefined) {
+            return { result: false, description: `${currentPath}=undefined` };
+        }
+        if (rest.length === 0) {
+            if (
+                shouldBeArray &&
+                (!Array.isArray(actualValue) || (Number.isInteger(arrayIndex) && actualValue.length <= Number(arrayIndex)))
+            ) {
+                return { result: false, description: `${currentPath} empty array` };
+            }
+            if (value === undefined) {
+                const result = shouldBeArray
+                    ? !Number.isInteger(arrayIndex) || actualValue.length >= Number(arrayIndex)
+                    : actualValue !== undefined;
+                return { result, description: `${currentPath} === undefined` };
+            }
+            if (!shouldBeArray) {
+                const result = value instanceof RegExp ? value.test(actualValue) : value === actualValue;
+                return { result, description: `${currentPath} === "${actualValue}"` };
+            }
+        }
+        if (shouldBeArray) {
+            if (Number.isInteger(arrayIndex)) {
+                return matchObject(actualValue[Number(arrayIndex)], rest.join('.'), value, currentPath);
+            }
+            const hasArrayMatch = (actualValue as Array<any>).some(
+                (arrayValue) => matchObject(arrayValue, rest.join('.'), value, currentPath).result
+            );
+            return { result: hasArrayMatch, description: `array match ${currentPath}` };
+        }
+        if (typeof actualValue !== 'object') {
+            return { result: false, description: `${currentPath} not an object` };
+        }
+        return matchObject(actualValue, rest.join('.'), value, currentPath);
+    };
+
+    const ___matchesValue = (matcher: number | string | RegExp | undefined, value?: string | number): boolean => {
+        if (matcher === undefined) {
+            return true;
+        }
+        if (typeof matcher !== 'string' && !(matcher instanceof RegExp) && typeof matcher !== 'number') {
+            throw new Error('invalid matcher');
+        }
+        if (typeof matcher === 'string' && matcher !== value) {
+            return false;
+        }
+        if (matcher instanceof RegExp && (typeof value !== 'string' || !matcher.test(value))) {
+            return false;
+        }
+        if (typeof matcher === 'number' && (typeof value !== 'number' || matcher !== value)) {
+            return false;
+        }
+        return true;
+    };
+    if (!___matchesValue(localMatchBuilderVariables.filter, req.url)) {
+        return {
+            result: false,
+            description: `url ${req.url} doesn't match ${localMatchBuilderVariables.filter?.toString()}`,
+        };
+    }
+    if (!___matchesValue(localMatchBuilderVariables.hostname, ___url.hostname)) {
+        return {
+            result: false,
+            description: `hostname ${___url.hostname} doesn't match ${localMatchBuilderVariables.hostname?.toString()}`,
+        };
+    }
+    if (!___matchesValue(localMatchBuilderVariables.pathname, ___url.pathname)) {
+        return {
+            result: false,
+            description: `pathname ${___url.pathname} doesn't match ${localMatchBuilderVariables.pathname?.toString()}`,
+        };
+    }
+    if (localMatchBuilderVariables.port) {
+        const port = ___url.port && ___url.port !== '' ? ___url.port : ___url.protocol === 'https:' ? '443' : '80';
+        if (
+            !___matchesValue(
+                localMatchBuilderVariables.port instanceof RegExp
+                    ? localMatchBuilderVariables.port
+                    : `${localMatchBuilderVariables.port}`,
+                port
+            )
+        ) {
+            return {
+                result: false,
+                description: `port ${port} doesn't match ${localMatchBuilderVariables.port?.toString()}`,
+            };
+        }
+    }
+    if (localMatchBuilderVariables.searchParams) {
+        for (const searchParamMatcher of localMatchBuilderVariables.searchParams) {
+            if (typeof searchParamMatcher === 'string') {
+                const result = ___url.searchParams.has(searchParamMatcher);
+                if (!result) {
+                    return { result, description: `searchParams.has("${searchParamMatcher}")` };
+                }
+                continue;
+            }
+            if (searchParamMatcher instanceof RegExp) {
+                const result = Array.from(___url.searchParams.keys()).some((key) => searchParamMatcher.test(key));
+                if (!result) {
+                    return { result, description: `searchParams.keys() matches ${searchParamMatcher.toString()}` };
+                }
+                continue;
+            }
+            if (!___url.searchParams.has(searchParamMatcher.key)) {
+                return { result: false, description: `searchParams.has("${searchParamMatcher.key}")` };
+            }
+            if (searchParamMatcher.value) {
+                const value = ___url.searchParams.get(searchParamMatcher.key);
+                if (!___matchesValue(searchParamMatcher.value, value as string)) {
+                    return {
+                        result: false,
+                        description: `searchParams.get("${searchParamMatcher.key}") = "${searchParamMatcher.value}"`,
+                    };
+                }
+            }
+        }
+    }
+    if (localMatchBuilderVariables.headers) {
+        for (const headerMatcher of localMatchBuilderVariables.headers) {
+            if (typeof headerMatcher === 'string') {
+                const result = ___headers.has(headerMatcher);
+                if (result) {
+                    continue;
+                }
+                return { result: false, description: `headers.has("${headerMatcher}")` };
+            }
+            if (headerMatcher instanceof RegExp) {
+                const result = ___headers.toHeaderPairs().some(([key]) => headerMatcher.test(key));
+                if (result) {
+                    continue;
+                }
+                return { result: false, description: `headers.keys matches ${headerMatcher.toString()}` };
+            }
+            if (!___headers.has(headerMatcher.key)) {
+                return { result: false, description: `headers.has("${headerMatcher.key}")` };
+            }
+            if (headerMatcher.value) {
+                const value = ___headers.get(headerMatcher.key);
+                if (!___matchesValue(headerMatcher.value, value)) {
+                    return {
+                        result: false,
+                        description: `headerMatcher.get("${headerMatcher.key}") = "${headerMatcher.value}"`,
+                    };
+                }
+            }
+        }
+    }
+    if (localMatchBuilderVariables.bodyText === null && !!req.body) {
+        return { result: false, description: `empty body` };
+    }
+    if (localMatchBuilderVariables.bodyText) {
+        if (!req.body) {
+            return { result: false, description: `empty body` };
+        }
+        if (localMatchBuilderVariables.bodyText instanceof RegExp) {
+            if (!___matchesValue(localMatchBuilderVariables.bodyText, req.body)) {
+                return {
+                    result: false,
+                    description: `body text doesn't match ${localMatchBuilderVariables.bodyText.toString()}`,
+                };
+            }
+        } else if (!req.body.includes(localMatchBuilderVariables.bodyText)) {
+            return {
+                result: false,
+                description: `body text doesn't include "${localMatchBuilderVariables.bodyText}"`,
+            };
+        }
+    }
+    if (localMatchBuilderVariables.bodyJson) {
+        let json: any;
+        try {
+            json = JSON.parse(req.body);
+        } catch (kiss) {
+            return { result: false, description: `unparseable json` };
+        }
+        if (!json) {
+            return { result: false, description: `empty json object` };
+        }
+        for (const jsonMatcher of Array.isArray(localMatchBuilderVariables.bodyJson)
+            ? localMatchBuilderVariables.bodyJson
+            : [localMatchBuilderVariables.bodyJson]) {
+            const matchObjectResult = matchObject(json, jsonMatcher.key, jsonMatcher.value);
+            if (!matchObjectResult.result) {
+                return { result: false, description: `$.${jsonMatcher.key} != "${jsonMatcher.value}"` };
+            }
+        }
+    }
+    if (localMatchBuilderVariables.bodyGql) {
+        if (!req.gqlBody) {
+            return { result: false, description: `not a gql body` };
+        }
+        if (!___matchesValue(localMatchBuilderVariables.bodyGql.methodName, req.gqlBody.methodName)) {
+            return {
+                result: false,
+                description: `methodName "${localMatchBuilderVariables.bodyGql.methodName}" !== "${req.gqlBody.methodName}"`,
+            };
+        }
+        if (!___matchesValue(localMatchBuilderVariables.bodyGql.operationName, req.gqlBody.operationName)) {
+            return {
+                result: false,
+                description: `operationName "${localMatchBuilderVariables.bodyGql.operationName}" !== "${req.gqlBody.operationName}"`,
+            };
+        }
+        if (!___matchesValue(localMatchBuilderVariables.bodyGql.query, req.gqlBody.query)) {
+            return {
+                result: false,
+                description: `query "${localMatchBuilderVariables.bodyGql.query}" !== "${req.gqlBody.query}"`,
+            };
+        }
+        if (!___matchesValue(localMatchBuilderVariables.bodyGql.type, req.gqlBody.type)) {
+            return {
+                result: false,
+                description: `type "${localMatchBuilderVariables.bodyGql.type}" !== "${req.gqlBody.type}"`,
+            };
+        }
+        if (localMatchBuilderVariables.bodyGql.variables) {
+            for (const jsonMatcher of Array.isArray(localMatchBuilderVariables.bodyGql.variables)
+                ? localMatchBuilderVariables.bodyGql.variables
+                : [localMatchBuilderVariables.bodyGql.variables]) {
+                const matchObjectResult = matchObject(req.gqlBody.variables, jsonMatcher.key, jsonMatcher.value);
+                if (!matchObjectResult.result) {
+                    return {
+                        result: false,
+                        description: `GQL variable ${jsonMatcher.key} != "${jsonMatcher.value}". Detail: ${matchObjectResult.description}`,
+                    };
+                }
+            }
+        }
+    }
+    return { result: true, description: 'match' };
+}
 
 class RuleBuilderBaseBase {
     protected rule: Stuntman.SerializableRule;
@@ -44,270 +298,7 @@ class RuleBuilderBaseBase {
                 mockResponse: { status: 200 },
             },
             matches: {
-                localFn: (req: Stuntman.Request): Stuntman.RuleMatchResult => {
-                    const ___url = new URL(req.url);
-                    const ___headers = req.rawHeaders;
-
-                    const arrayIndexerRegex = /\[(?<arrayIndex>[0-9]*)\]/i;
-                    const matchObject = (
-                        obj: any,
-                        path: string,
-                        value?: string | RegExp | number | boolean | null,
-                        parentPath?: string
-                    ): Exclude<Stuntman.RuleMatchResult, boolean> => {
-                        if (!obj) {
-                            return { result: false, description: `${parentPath} is falsey` };
-                        }
-                        const [rawKey, ...rest] = path.split('.');
-                        const key = (rawKey ?? '').replace(arrayIndexerRegex, '');
-                        const shouldBeArray = rawKey ? arrayIndexerRegex.test(rawKey) : false;
-                        const arrayIndex =
-                            rawKey && (arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex || '').length > 0
-                                ? Number(arrayIndexerRegex.exec(rawKey)?.groups?.arrayIndex)
-                                : Number.NaN;
-                        const actualValue = key ? obj[key] : obj;
-                        const currentPath = `${parentPath ? `${parentPath}.` : ''}${rawKey}`;
-                        if (value === undefined && actualValue === undefined) {
-                            return { result: false, description: `${currentPath}=undefined` };
-                        }
-                        if (rest.length === 0) {
-                            if (
-                                shouldBeArray &&
-                                (!Array.isArray(actualValue) ||
-                                    (Number.isInteger(arrayIndex) && actualValue.length <= Number(arrayIndex)))
-                            ) {
-                                return { result: false, description: `${currentPath} empty array` };
-                            }
-                            if (value === undefined) {
-                                const result = shouldBeArray
-                                    ? !Number.isInteger(arrayIndex) || actualValue.length >= Number(arrayIndex)
-                                    : actualValue !== undefined;
-                                return { result, description: `${currentPath} === undefined` };
-                            }
-                            if (!shouldBeArray) {
-                                const result = value instanceof RegExp ? value.test(actualValue) : value === actualValue;
-                                return { result, description: `${currentPath} === "${actualValue}"` };
-                            }
-                        }
-                        if (shouldBeArray) {
-                            if (Number.isInteger(arrayIndex)) {
-                                return matchObject(actualValue[Number(arrayIndex)], rest.join('.'), value, currentPath);
-                            }
-                            const hasArrayMatch = (actualValue as Array<any>).some(
-                                (arrayValue) => matchObject(arrayValue, rest.join('.'), value, currentPath).result
-                            );
-                            return { result: hasArrayMatch, description: `array match ${currentPath}` };
-                        }
-                        if (typeof actualValue !== 'object') {
-                            return { result: false, description: `${currentPath} not an object` };
-                        }
-                        return matchObject(actualValue, rest.join('.'), value, currentPath);
-                    };
-
-                    const ___matchesValue = (matcher: number | string | RegExp | undefined, value?: string | number): boolean => {
-                        if (matcher === undefined) {
-                            return true;
-                        }
-                        if (typeof matcher !== 'string' && !(matcher instanceof RegExp) && typeof matcher !== 'number') {
-                            throw new Error('invalid matcher');
-                        }
-                        if (typeof matcher === 'string' && matcher !== value) {
-                            return false;
-                        }
-                        if (matcher instanceof RegExp && (typeof value !== 'string' || !matcher.test(value))) {
-                            return false;
-                        }
-                        if (typeof matcher === 'number' && (typeof value !== 'number' || matcher !== value)) {
-                            return false;
-                        }
-                        return true;
-                    };
-                    if (!___matchesValue(matchBuilderVariables.filter, req.url)) {
-                        return {
-                            result: false,
-                            description: `url ${req.url} doesn't match ${matchBuilderVariables.filter?.toString()}`,
-                        };
-                    }
-                    if (!___matchesValue(matchBuilderVariables.hostname, ___url.hostname)) {
-                        return {
-                            result: false,
-                            description: `hostname ${
-                                ___url.hostname
-                            } doesn't match ${matchBuilderVariables.hostname?.toString()}`,
-                        };
-                    }
-                    if (!___matchesValue(matchBuilderVariables.pathname, ___url.pathname)) {
-                        return {
-                            result: false,
-                            description: `pathname ${
-                                ___url.pathname
-                            } doesn't match ${matchBuilderVariables.pathname?.toString()}`,
-                        };
-                    }
-                    if (matchBuilderVariables.port) {
-                        const port =
-                            ___url.port && ___url.port !== '' ? ___url.port : ___url.protocol === 'https:' ? '443' : '80';
-                        if (
-                            !___matchesValue(
-                                matchBuilderVariables.port instanceof RegExp
-                                    ? matchBuilderVariables.port
-                                    : `${matchBuilderVariables.port}`,
-                                port
-                            )
-                        ) {
-                            return {
-                                result: false,
-                                description: `port ${port} doesn't match ${matchBuilderVariables.port?.toString()}`,
-                            };
-                        }
-                    }
-                    if (matchBuilderVariables.searchParams) {
-                        for (const searchParamMatcher of matchBuilderVariables.searchParams) {
-                            if (typeof searchParamMatcher === 'string') {
-                                const result = ___url.searchParams.has(searchParamMatcher);
-                                return { result, description: `searchParams.has("${searchParamMatcher}")` };
-                            }
-                            if (searchParamMatcher instanceof RegExp) {
-                                const result = Array.from(___url.searchParams.keys()).some((key) => searchParamMatcher.test(key));
-                                return { result, description: `searchParams.keys() matches ${searchParamMatcher.toString()}` };
-                            }
-                            if (!___url.searchParams.has(searchParamMatcher.key)) {
-                                return { result: false, description: `searchParams.has("${searchParamMatcher.key}")` };
-                            }
-                            if (searchParamMatcher.value) {
-                                const value = ___url.searchParams.get(searchParamMatcher.key);
-                                if (value === null) {
-                                    return {
-                                        result: false,
-                                        description: `searchParams.get("${searchParamMatcher.key}") === null`,
-                                    };
-                                }
-                                if (!___matchesValue(searchParamMatcher.value, value)) {
-                                    return {
-                                        result: false,
-                                        description: `searchParams.get("${searchParamMatcher.key}") = "${searchParamMatcher.value}"`,
-                                    };
-                                }
-                            }
-                        }
-                    }
-                    if (matchBuilderVariables.headers) {
-                        for (const headerMatcher of matchBuilderVariables.headers) {
-                            if (typeof headerMatcher === 'string') {
-                                const result = ___headers.has(headerMatcher);
-                                if (result) {
-                                    continue;
-                                }
-                                return { result: false, description: `headers.has("${headerMatcher}")` };
-                            }
-                            if (headerMatcher instanceof RegExp) {
-                                const result = ___headers.toHeaderPairs().some(([key]) => headerMatcher.test(key));
-                                if (result) {
-                                    continue;
-                                }
-                                return { result: false, description: `headers.keys matches ${headerMatcher.toString()}` };
-                            }
-                            if (!___headers.has(headerMatcher.key)) {
-                                return { result: false, description: `headers.has("${headerMatcher.key}")` };
-                            }
-                            if (headerMatcher.value) {
-                                const value = ___headers.get(headerMatcher.key);
-                                if (value === null) {
-                                    return { result: false, description: `headers.get("${headerMatcher.key}") === null` };
-                                }
-                                if (!___matchesValue(headerMatcher.value, value)) {
-                                    return {
-                                        result: false,
-                                        description: `headerMatcher.get("${headerMatcher.key}") = "${headerMatcher.value}"`,
-                                    };
-                                }
-                            }
-                        }
-                    }
-                    if (matchBuilderVariables.bodyText === null && !!req.body) {
-                        return { result: false, description: `empty body` };
-                    }
-                    if (matchBuilderVariables.bodyText) {
-                        if (!req.body) {
-                            return { result: false, description: `empty body` };
-                        }
-                        if (matchBuilderVariables.bodyText instanceof RegExp) {
-                            if (!___matchesValue(matchBuilderVariables.bodyText, req.body)) {
-                                return {
-                                    result: false,
-                                    description: `body text doesn't match ${matchBuilderVariables.bodyText.toString()}`,
-                                };
-                            }
-                        } else if (!req.body.includes(matchBuilderVariables.bodyText)) {
-                            return {
-                                result: false,
-                                description: `body text doesn't include "${matchBuilderVariables.bodyText}"`,
-                            };
-                        }
-                    }
-                    if (matchBuilderVariables.bodyJson) {
-                        let json: any;
-                        try {
-                            json = JSON.parse(req.body);
-                        } catch (kiss) {
-                            return { result: false, description: `unparseable json` };
-                        }
-                        if (!json) {
-                            return { result: false, description: `empty json object` };
-                        }
-                        for (const jsonMatcher of Array.isArray(matchBuilderVariables.bodyJson)
-                            ? matchBuilderVariables.bodyJson
-                            : [matchBuilderVariables.bodyJson]) {
-                            const matchObjectResult = matchObject(json, jsonMatcher.key, jsonMatcher.value);
-                            if (!matchObjectResult.result) {
-                                return { result: false, description: `$.${jsonMatcher.key} != "${jsonMatcher.value}"` };
-                            }
-                        }
-                    }
-                    if (matchBuilderVariables.bodyGql) {
-                        if (!req.gqlBody) {
-                            return { result: false, description: `not a gql body` };
-                        }
-                        if (!___matchesValue(matchBuilderVariables.bodyGql.methodName, req.gqlBody.methodName)) {
-                            return {
-                                result: false,
-                                description: `methodName "${matchBuilderVariables.bodyGql.methodName}" !== "${req.gqlBody.methodName}"`,
-                            };
-                        }
-                        if (!___matchesValue(matchBuilderVariables.bodyGql.operationName, req.gqlBody.operationName)) {
-                            return {
-                                result: false,
-                                description: `operationName "${matchBuilderVariables.bodyGql.operationName}" !== "${req.gqlBody.operationName}"`,
-                            };
-                        }
-                        if (!___matchesValue(matchBuilderVariables.bodyGql.query, req.gqlBody.query)) {
-                            return {
-                                result: false,
-                                description: `query "${matchBuilderVariables.bodyGql.query}" !== "${req.gqlBody.query}"`,
-                            };
-                        }
-                        if (!___matchesValue(matchBuilderVariables.bodyGql.type, req.gqlBody.type)) {
-                            return {
-                                result: false,
-                                description: `type "${matchBuilderVariables.bodyGql.type}" !== "${req.gqlBody.type}"`,
-                            };
-                        }
-                        if (matchBuilderVariables.bodyGql.variables) {
-                            for (const jsonMatcher of Array.isArray(matchBuilderVariables.bodyGql.variables)
-                                ? matchBuilderVariables.bodyGql.variables
-                                : [matchBuilderVariables.bodyGql.variables]) {
-                                const matchObjectResult = matchObject(req.gqlBody.variables, jsonMatcher.key, jsonMatcher.value);
-                                if (!matchObjectResult.result) {
-                                    return {
-                                        result: false,
-                                        description: `GQL variable ${jsonMatcher.key} != "${jsonMatcher.value}". Detail: ${matchObjectResult.description}`,
-                                    };
-                                }
-                            }
-                        }
-                    }
-                    return { result: true, description: 'match' };
-                },
+                localFn: matchFunction,
                 localVariables: { matchBuilderVariables: this._matchBuilderVariables },
             },
         };
@@ -405,7 +396,27 @@ class RuleBuilder extends RuleBuilderBase {
     }
 }
 
-class RuleBuilderInitialized extends RuleBuilderBase {
+class RuleBuilderRequestInitialized extends RuleBuilderBase {
+    modifyResponse(
+        modifyFunction: Stuntman.ResponseManipulationFn | Stuntman.RemotableFunction<Stuntman.ResponseManipulationFn>,
+        localVariables?: Stuntman.LocalVariables
+    ): Stuntman.SerializableRule {
+        if (!this.rule.actions) {
+            throw new Error('rule.actions not defined - builder implementation error');
+        }
+        if (typeof modifyFunction === 'function') {
+            this.rule.actions.modifyResponse = { localFn: modifyFunction, localVariables: localVariables ?? {} };
+            return this.rule;
+        }
+        if (localVariables) {
+            throw new Error('invalid call - localVariables cannot be used together with Response or RemotableFunction');
+        }
+        this.rule.actions.modifyResponse = modifyFunction;
+        return this.rule;
+    }
+}
+
+class RuleBuilderInitialized extends RuleBuilderRequestInitialized {
     withHostname(hostname: string | RegExp) {
         if (this._matchBuilderVariables.hostname) {
             throw new Error('hostname already set');
@@ -594,39 +605,14 @@ class RuleBuilderInitialized extends RuleBuilderBase {
         return new RuleBuilderRequestInitialized(this.rule, this._matchBuilderVariables);
     }
 
-    modifyResponse(
-        modifyFunction: Stuntman.ResponseManipulationFn | Stuntman.RemotableFunction<Stuntman.ResponseManipulationFn>,
-        localVariables?: Stuntman.LocalVariables
-    ): Stuntman.SerializableRule {
-        if (typeof modifyFunction === 'function') {
-            this.rule.actions = { modifyResponse: { localFn: modifyFunction, localVariables: localVariables ?? {} } };
-            return this.rule;
-        }
-        if (localVariables) {
-            throw new Error('invalid call - localVariables cannot be used together with Response or RemotableFunction');
-        }
-        this.rule.actions = { modifyResponse: modifyFunction };
-        return this.rule;
-    }
-}
-
-class RuleBuilderRequestInitialized extends RuleBuilderBase {
-    modifyResponse(
+    override modifyResponse(
         modifyFunction: Stuntman.ResponseManipulationFn | Stuntman.RemotableFunction<Stuntman.ResponseManipulationFn>,
         localVariables?: Stuntman.LocalVariables
     ): Stuntman.SerializableRule {
         if (!this.rule.actions) {
-            throw new Error('rule.actions not defined - builder implementation error');
+            this.rule.actions = { proxyPass: true };
         }
-        if (typeof modifyFunction === 'function') {
-            this.rule.actions = { modifyResponse: { localFn: modifyFunction, localVariables: localVariables ?? {} } };
-            return this.rule;
-        }
-        if (localVariables) {
-            throw new Error('invalid call - localVariables cannot be used together with Response or RemotableFunction');
-        }
-        this.rule.actions.modifyResponse = modifyFunction;
-        return this.rule;
+        return super.modifyResponse(modifyFunction, localVariables);
     }
 }
 

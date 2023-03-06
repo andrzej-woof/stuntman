@@ -57,8 +57,8 @@ export const deserializeRule = (serializedRule: Stuntman.SerializedRule): Stuntm
 export const escapedSerialize = (obj: any) =>
     serializeJavascript(obj).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, "\\n'\n+ '");
 
-export const liveRuleToRule = (liveRule: Stuntman.LiveRule) => {
-    const ruleClone: Stuntman.Rule = { ...liveRule };
+export const liveRuleToRule = (liveRule: Stuntman.LiveRule): Stuntman.Rule => {
+    const ruleClone: Stuntman.SharedProps<Stuntman.Rule, Stuntman.LiveRule> = { ...liveRule };
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     delete ruleClone.counter;

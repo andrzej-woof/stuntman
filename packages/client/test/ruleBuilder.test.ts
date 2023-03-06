@@ -8,8 +8,12 @@ const callRemotableFunction = (
     // eslint-disable-next-line @typescript-eslint/ban-types
     fn: Stuntman.RemotableFunction<Function>,
     request: Stuntman.Request,
-    response?: Stuntman.Response
+    response?: Stuntman.Response,
+    serialized?: boolean
 ) => {
+    if (!serialized) {
+        return fn.localFn.bind(fn.localVariables)(request, response, fn.localVariables);
+    }
     const stringifiedVars = Object.entries(fn.localVariables || {}).map(([key, value]) => [key, serializeJavascript(value)]);
     const newFn = new Function(
         'request',
@@ -67,6 +71,26 @@ const receivedResponse: Stuntman.Response = {
         },
     }),
 };
+
+test('falsey path', async () => {
+    const builder = ruleBuilder().onAnyRequest();
+    (builder['rule'].matches.localVariables as any).matchBuilderVariables.bodyJson = [{ key: 'groot.' }];
+    expect(callRemotableFunction(builder['rule'].matches, { ...matchingRequest, body: '{ "groot": null }' })).toEqual({
+        description: '$.groot. != "undefined"',
+        result: false,
+    });
+});
+
+test('wrong matcher', async () => {
+    const builder = ruleBuilder().onAnyRequest();
+    (builder['rule'].matches.localVariables as any).matchBuilderVariables.filter = { some: 'object' };
+    expect(() => callRemotableFunction(builder['rule'].matches, matchingRequest)).toThrow();
+    (builder['rule'].matches.localVariables as any).matchBuilderVariables.filter = 1234;
+    expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({
+        description: "url http://www.some.server.example.com/somepath?param1=valueone&param2=value2 doesn't match 1234",
+        result: false,
+    });
+});
 
 describe('rule.matches', () => {
     test('default matchBuilderVariables', () => {
@@ -158,6 +182,15 @@ describe('rule.matches', () => {
         const builder = ruleBuilder().onAnyRequest();
         expect(builder['rule'].matches.localVariables?.matchBuilderVariables).toEqual({});
         expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({ description: 'match', result: true });
+    });
+
+    test('onAnyRequest - serialized function call', () => {
+        const builder = ruleBuilder().onAnyRequest();
+        expect(builder['rule'].matches.localVariables?.matchBuilderVariables).toEqual({});
+        expect(callRemotableFunction(builder['rule'].matches, matchingRequest, undefined, true)).toEqual({
+            description: 'match',
+            result: true,
+        });
     });
 
     describe('onRequestTo', () => {
@@ -341,6 +374,8 @@ describe('rule properties', () => {
         expect(builder['rule'].ttlSeconds).toEqual(100);
         expect(() => builder.customTtl(9)).toThrow();
         expect(() => builder.customTtl(3601)).toThrow();
+        // @ts-expect-error invalid type
+        expect(() => builder.customTtl('232')).toThrow();
     });
 
     test('decreasePriority', () => {
@@ -432,6 +467,19 @@ describe('rule initialized', () => {
                 )
             ).toEqual({ status: 201, body: matchingRequest });
         });
+
+        test('invalid', async () => {
+            const builder = ruleBuilder().onAnyRequest();
+            expect(() =>
+                builder.mockResponse(
+                    {
+                        // @ts-expect-error invalid args
+                        status: 201,
+                    },
+                    { var: 'value' }
+                )
+            ).toThrow();
+        });
     });
 
     test('modifyRequest', () => {
@@ -450,10 +498,33 @@ describe('rule initialized', () => {
                 matchingRequest
             )
         ).toEqual({ ...matchingRequest, body: matchingRequest });
+
+        builder.modifyRequest({
+            localFn: (request: Stuntman.Request): Stuntman.Request => {
+                return {
+                    ...request,
+                    body: request,
+                };
+            },
+            localVariables: { var: 'any' },
+        });
+        expect(builder['rule'].actions.modifyRequest?.localVariables).toEqual({ var: 'any' });
+
+        expect(() =>
+            builder.modifyRequest(
+                {
+                    localFn: (request: Stuntman.Request): Stuntman.Request => ({
+                        ...request,
+                        body: request,
+                    }),
+                },
+                { var: 'any' }
+            )
+        ).toThrow();
     });
 
     test('modifyResponse', () => {
-        const builder = ruleBuilder().onAnyRequest();
+        let builder = ruleBuilder().onAnyRequest();
         builder.modifyResponse((request: Stuntman.Request, response: Stuntman.Response): Stuntman.Response => {
             return {
                 ...response,
@@ -472,6 +543,39 @@ describe('rule initialized', () => {
                 receivedResponse
             )
         ).toEqual({ ...receivedResponse, body: { request: matchingRequest, response: receivedResponse } });
+
+        builder.modifyResponse({
+            localFn: (request: Stuntman.Request, response: Stuntman.Response): Stuntman.Response => ({
+                ...response,
+                body: {
+                    request,
+                    response,
+                },
+            }),
+            localVariables: { var: 'any' },
+        });
+        expect(builder['rule'].actions.modifyResponse?.localVariables).toEqual({ var: 'any' });
+
+        expect(() =>
+            builder.modifyResponse(
+                {
+                    localFn: (request: Stuntman.Request, response: Stuntman.Response): Stuntman.Response => ({
+                        ...response,
+                        body: {
+                            request,
+                            response,
+                        },
+                    }),
+                },
+                { var: 'any' }
+            )
+        ).toThrow();
+
+        builder = ruleBuilder().onAnyRequest();
+        builder.modifyRequest((req) => req);
+        // @ts-expect-error empty actions
+        builder['rule'].actions = undefined;
+        builder.modifyResponse((req) => req);
     });
 
     test('proxyPass', () => {
@@ -503,6 +607,7 @@ describe('rule initialized', () => {
             const builder = ruleBuilder().onAnyRequest();
             builder.withPort(8090);
             expect(builder['rule'].matches.localVariables?.matchBuilderVariables).toEqual({ port: 8090 });
+            expect(() => builder.withPort(80)).toThrow();
         });
 
         test('header', () => {
@@ -513,6 +618,18 @@ describe('rule initialized', () => {
                 description: 'match',
                 result: true,
             });
+            expect(
+                callRemotableFunction(builder['rule'].matches, {
+                    ...matchingRequest,
+                    rawHeaders: new RawHeaders('x-somethingelse', 'x-something'),
+                })
+            ).toEqual({
+                description: 'headers.has("x-something")',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withHeader('x-something', 'val');
             expect(
                 callRemotableFunction(builder['rule'].matches, {
                     ...matchingRequest,
@@ -629,6 +746,9 @@ describe('rule initialized', () => {
                 description: 'headerMatcher.get("x-something4") = "/x-value/"',
                 result: false,
             });
+            expect(() => builder.withHeader('')).toThrow();
+            // @ts-expect-error unsupported params
+            expect(() => builder.withHeader(/test/, /test/)).toThrow();
         });
 
         test('headers', () => {
@@ -652,17 +772,105 @@ describe('rule initialized', () => {
         });
 
         test('searchparam', () => {
-            // TODO
-            // const builder = ruleBuilder().onAnyRequest();
+            let builder = ruleBuilder().onAnyRequest();
+            builder.withSearchParam('param1');
+            expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withSearchParam(/PaRam/i);
+            expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withSearchParam('param1', 'valueone');
+            expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withSearchParam('param1', /ValUEone/i);
+            expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withSearchParam('param10');
+            expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({
+                description: 'searchParams.has("param10")',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withSearchParam('param10', /.*/i);
+            expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({
+                description: 'searchParams.has("param10")',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withSearchParam(/param[^0-9]+/);
+            expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({
+                description: 'searchParams.keys() matches /param[^0-9]+/',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withSearchParam('param100', 'something');
+            expect(
+                callRemotableFunction(builder['rule'].matches, { ...matchingRequest, url: `${matchingRequest.url}&param100` })
+            ).toEqual({
+                description: 'searchParams.get("param100") = "something"',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            // @ts-expect-error invalid args
+            expect(() => builder.withSearchParam()).toThrow();
+            // @ts-expect-error invalid args
+            expect(() => builder.withSearchParam(/test/, /test/)).toThrow();
         });
 
         test('searchparams', () => {
-            // TODO
-            // const builder = ruleBuilder().onAnyRequest();
+            const builder = ruleBuilder().onAnyRequest();
+            builder.withSearchParams([
+                'param1',
+                /ParAm/i,
+                { key: 'param1' },
+                { key: 'param1', value: 'valueone' },
+                { key: 'param1', value: /vAlue/i },
+            ]);
+            expect(builder['rule'].matches.localVariables).toEqual({
+                matchBuilderVariables: {
+                    searchParams: [
+                        'param1',
+                        /ParAm/i,
+                        'param1',
+                        {
+                            key: 'param1',
+                            value: 'valueone',
+                        },
+                        {
+                            key: 'param1',
+                            value: /vAlue/i,
+                        },
+                    ],
+                },
+            });
+            expect(callRemotableFunction(builder['rule'].matches, matchingRequest)).toEqual({
+                description: 'match',
+                result: true,
+            });
         });
 
         test('without body', () => {
-            const builder = ruleBuilder().onAnyRequest();
+            let builder = ruleBuilder().onAnyRequest();
             builder.withoutBody();
             expect(builder['rule'].matches.localVariables?.matchBuilderVariables).toEqual({ bodyText: null });
             expect(callRemotableFunction(builder['rule'].matches, { ...matchingRequest, body: undefined })).toEqual({
@@ -681,6 +889,10 @@ describe('rule initialized', () => {
                 description: 'empty body',
                 result: false,
             });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyText('1234');
+            expect(() => builder.withoutBody()).toThrow();
         });
 
         test('body text', () => {
@@ -731,6 +943,14 @@ describe('rule initialized', () => {
                 description: "body text doesn't match /VaLue1/i",
                 result: false,
             });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyText('1234');
+            expect(() => builder.withBodyText('5678')).toThrow();
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withoutBody();
+            expect(() => builder.withBodyText('5678')).toThrow();
         });
 
         test('body json', () => {
@@ -741,7 +961,7 @@ describe('rule initialized', () => {
                 .withBodyJson('root.child2.array.[1]', 'value2')
                 .withBodyJson('root.child2.array.[]', 'value3')
                 .withBodyJson('root.child2.array.[]', /^[^t]+/i)
-                .withBodyJson('root.child5.prop1', 123)
+                .withBodyJson({ key: 'root.child5.prop1', value: 123 })
                 .withBodyJson('root.child5.prop2', true)
                 .withBodyJson('root.child5.prop3', false)
                 .withBodyJson('root.child5.prop5', null)
@@ -857,6 +1077,18 @@ describe('rule initialized', () => {
             });
 
             modifiedBody = JSON.parse(matchingRequest.body);
+            modifiedBody.root.child = 'test';
+            expect(
+                callRemotableFunction(builder['rule'].matches, {
+                    ...matchingRequest,
+                    body: JSON.stringify(modifiedBody),
+                })
+            ).toEqual({
+                description: '$.root.child.property != "value"',
+                result: false,
+            });
+
+            modifiedBody = JSON.parse(matchingRequest.body);
             modifiedBody.root.child.property = 'value2';
             expect(
                 callRemotableFunction(builder['rule'].matches, {
@@ -870,6 +1102,30 @@ describe('rule initialized', () => {
 
             modifiedBody = JSON.parse(matchingRequest.body);
             modifiedBody.root.child2.array[1] = 'value22';
+            expect(
+                callRemotableFunction(builder['rule'].matches, {
+                    ...matchingRequest,
+                    body: JSON.stringify(modifiedBody),
+                })
+            ).toEqual({
+                description: '$.root.child2.array.[1] != "value2"',
+                result: false,
+            });
+
+            modifiedBody = JSON.parse(matchingRequest.body);
+            modifiedBody.root.child2.array = [];
+            expect(
+                callRemotableFunction(builder['rule'].matches, {
+                    ...matchingRequest,
+                    body: JSON.stringify(modifiedBody),
+                })
+            ).toEqual({
+                description: '$.root.child2.array.[1] != "value2"',
+                result: false,
+            });
+
+            modifiedBody = JSON.parse(matchingRequest.body);
+            modifiedBody.root.child2.array = { not: 'array' };
             expect(
                 callRemotableFunction(builder['rule'].matches, {
                     ...matchingRequest,
@@ -963,6 +1219,21 @@ describe('rule initialized', () => {
                 description: '$.root.child5.prop6 != "123"',
                 result: false,
             });
+
+            expect(
+                callRemotableFunction(builder['rule'].matches, {
+                    ...matchingRequest,
+                    body: 'null',
+                })
+            ).toEqual({
+                description: 'empty json object',
+                result: false,
+            });
+
+            expect(() => builder.withBodyJson('dumbkey!')).toThrow();
+            // @ts-expect-error invalid arguments
+            expect(() => builder.withBodyJson({ key: 'test' }, 'something')).toThrow();
+            expect(() => builder.withBodyJson({ key: 'dumbkey!' })).toThrow();
         });
 
         test('body gql', () => {
@@ -1074,6 +1345,34 @@ describe('rule initialized', () => {
             });
             expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
                 description: 'GQL variable $someId != "/test[0-9]+nomatch/i". Detail: $someId === "666777test"',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                variables: [{ key: '$someId', value: /test[0-9]+nomatch/i }],
+            });
+            expect(callRemotableFunction(builder['rule'].matches, { ...gqlRequest, gqlBody: undefined })).toEqual({
+                description: 'not a gql body',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                methodName: 'something',
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description: 'methodName "something" !== "author"',
+                result: false,
+            });
+
+            builder = ruleBuilder().onAnyRequest();
+            builder.withBodyGql({
+                query: 'test',
+            });
+            expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
+                description:
+                    'query "test" !== "query myOperation ($someId: String) { author(input: { id: $someId }) { id name } }"',
                 result: false,
             });
         });

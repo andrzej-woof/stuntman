@@ -1,4 +1,4 @@
-import { AppError, HttpCode, MAX_RULE_TTL_SECONDS, MIN_RULE_TTL_SECONDS, logger, RawHeaders } from '@stuntman/shared';
+import { AppError, HttpCode, MAX_RULE_TTL_SECONDS, MIN_RULE_TTL_SECONDS, logger, RawHeaders, errorToLog } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
 
 export const validateSerializedRuleProperties = (rule: Stuntman.SerializedRule): void => {
@@ -61,7 +61,8 @@ export const validateSerializedRuleProperties = (rule: Stuntman.SerializedRule):
             }
             if (
                 typeof rule.actions.mockResponse.rawHeaders !== 'undefined' &&
-                (!Array.isArray(rule.actions.mockResponse.rawHeaders) ||
+                (typeof rule.actions.mockResponse.rawHeaders === 'string' ||
+                    !Array.isArray(rule.actions.mockResponse.rawHeaders) ||
                     rule.actions.mockResponse.rawHeaders.length % 2 !== 0 ||
                     rule.actions.mockResponse.rawHeaders.some((header) => typeof header !== 'string'))
             ) {
@@ -75,10 +76,16 @@ export const validateSerializedRuleProperties = (rule: Stuntman.SerializedRule):
             }
         }
     }
-    if (typeof rule.actions.modifyRequest !== 'undefined' && typeof rule.actions.modifyRequest.remoteFn !== 'string') {
+    if (
+        typeof rule.actions.modifyRequest !== 'undefined' &&
+        (typeof rule.actions.modifyRequest.remoteFn !== 'string' || !rule.actions.modifyRequest.remoteFn.trim())
+    ) {
         throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.actions.modifyRequest' });
     }
-    if (typeof rule.actions.modifyResponse !== 'undefined' && typeof rule.actions.modifyResponse.remoteFn !== 'string') {
+    if (
+        typeof rule.actions.modifyResponse !== 'undefined' &&
+        (typeof rule.actions.modifyResponse.remoteFn !== 'string' || !rule.actions.modifyResponse.remoteFn.trim())
+    ) {
         throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.actions.modifyResponse' });
     }
     if (
@@ -97,7 +104,7 @@ export const validateSerializedRuleProperties = (rule: Stuntman.SerializedRule):
     }
     if (
         typeof rule.labels !== 'undefined' &&
-        (!Array.isArray(rule.labels) || rule.labels.some((label) => typeof label !== 'string'))
+        (typeof rule.labels !== 'object' || !Array.isArray(rule.labels) || rule.labels.some((label) => typeof label !== 'string'))
     ) {
         throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'invalid rule.labels' });
     }
@@ -138,7 +145,7 @@ export const validateDeserializedRule = (deserializedRule: Stuntman.Rule) => {
             url: 'http://dummy.invalid/',
         });
     } catch (error: any) {
-        logger.error({ ruleId: deserializedRule.id }, error);
+        logger.error({ ruleId: deserializedRule.id, error: errorToLog(error) }, 'match function threw an error');
         throw new AppError({
             httpCode: HttpCode.UNPROCESSABLE_ENTITY,
             message: 'match function threw an error',

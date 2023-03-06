@@ -6,6 +6,7 @@ export * from './stringify';
 export * from './rawHeaders';
 export * from './gqlParser';
 export * from './escapeStringRegexp';
+export * from './errorToLog';
 import fs from 'fs';
 
 import config from './config';
@@ -15,6 +16,8 @@ export const stuntmanConfig = config.stuntmanConfig;
 export const INDEX_DTS = fs.readFileSync(`${__dirname}/index.d.ts`, 'utf-8');
 
 type NonObject = string | number | boolean | symbol | undefined | null | any[];
+
+export type SharedProps<T1, T2> = Pick<T1 | T2, Extract<keyof T1, keyof T2>>;
 
 interface SerializableTypesRecord<T> {
     [k: string | number]: T;

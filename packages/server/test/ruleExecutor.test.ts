@@ -33,6 +33,12 @@ test('default rules', async () => {
     expect(defaultRules[1]?.id).toEqual('internal/echo');
 });
 
+test('no rules', async () => {
+    expect(getRuleExecutor(uuidv4(), [])['_rules']).toEqual([]);
+    // @ts-expect-error null rules
+    expect(getRuleExecutor(uuidv4(), null)['_rules']).toEqual([]);
+});
+
 test('add / get', async () => {
     const ruleExecutor = getRuleExecutor(uuidv4());
     const rule = makeRule();

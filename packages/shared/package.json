@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/shared",
-    "version": "0.1.11",
+    "version": "0.2.0",
     "description": "Stuntman - HTTP proxy / mock shared types and utils",
     "main": "dist/index.js",
     "repository": {
@@ -12,7 +12,7 @@
         "url": "https://github.com/andrzej-woof/stuntman/issues"
     },
     "scripts": {
-        "test": "SUPPRESS_NO_CONFIG_WARNING=1 jest --coverage",
+        "test": "LOG_LEVEL=silent SUPPRESS_NO_CONFIG_WARNING=1 jest --coverage",
         "clean": "rm -fr dist",
         "build": "tsc",
         "lint": "prettier --check \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\"",
