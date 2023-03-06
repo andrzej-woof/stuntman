@@ -1,5 +1,5 @@
 import fs from 'fs';
-import glob from 'glob';
+import { globSync } from 'glob';
 import * as tsImport from 'ts-import';
 import { catchAllRule } from './catchAll';
 import { echoRule } from './echo';
@@ -15,7 +15,7 @@ export const loadRules = (): Stuntman.DeployedRule[] => {
         return [];
     }
     logger.debug({ rulesPath: stuntmanConfig.mock.rulesPath }, `loading additional rules`);
-    const filePaths = glob.sync('*.[tj]s', { absolute: true, cwd: stuntmanConfig.mock.rulesPath });
+    const filePaths = globSync('*.[tj]s', { absolute: true, cwd: stuntmanConfig.mock.rulesPath });
     const tsImportCompiledFileNames = filePaths.map((p) => p.replace(/\.[^/.]+$/u, '.js'));
     const tsImportDuplicatedCompiledFileNames = tsImportCompiledFileNames.filter(
         (currentValue, currentIndex) => tsImportCompiledFileNames.indexOf(currentValue) !== currentIndex

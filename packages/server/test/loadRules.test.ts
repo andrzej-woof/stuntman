@@ -4,7 +4,7 @@ import { test, expect, jest, describe } from '@jest/globals';
 import { loadRules } from '../src/rules/loadRules';
 import { stuntmanConfig } from '@stuntman/shared';
 
-const mockedRules = glob.sync('*.[tj]s', { absolute: true, cwd: `${__dirname}/__rules` });
+const mockedRules = glob.globSync('*.[tj]s', { absolute: true, cwd: `${__dirname}/__rules` });
 
 describe('loadRules', () => {
     test('empty', async () => {
@@ -15,13 +15,17 @@ describe('loadRules', () => {
         const fsExistsSyncSpy = jest.spyOn(fs, 'existsSync').mockImplementation((path) => {
             return path === stuntmanConfig.mock.rulesPath;
         });
-        const globSyncSpy = jest.spyOn(glob, 'sync').mockImplementation(() => {
+        const globSyncSpy = jest.spyOn(glob, 'globSync').mockImplementation(() => {
             return mockedRules.filter((p) => !/duplicate/.test(p) && !/tsImportBug/.test(p));
         });
 
-        expect(loadRules()).toEqual(
-            ['rule-ts', 'rule-js', 'rule2b-ts', 'rule2a-ts', 'rule2a-js', 'rule2b-js'].map((id) =>
-                expect.objectContaining({ id })
+        const loadedRules = loadRules();
+        expect(loadedRules).toHaveLength(6);
+        expect(loadedRules).toEqual(
+            expect.arrayContaining(
+                ['rule-ts', 'rule-js', 'rule2b-ts', 'rule2a-ts', 'rule2a-js', 'rule2b-js'].map((id) =>
+                    expect.objectContaining({ id })
+                )
             )
         );
         expect(fsExistsSyncSpy).toHaveBeenCalledWith(stuntmanConfig.mock.rulesPath);
@@ -35,7 +39,7 @@ describe('loadRules', () => {
         const fsExistsSyncSpy = jest.spyOn(fs, 'existsSync').mockImplementation((path) => {
             return path === stuntmanConfig.mock.rulesPath;
         });
-        const globSyncSpy = jest.spyOn(glob, 'sync').mockImplementation(() => {
+        const globSyncSpy = jest.spyOn(glob, 'globSync').mockImplementation(() => {
             return mockedRules.filter((p) => /duplicate/.test(p));
         });
 
@@ -49,7 +53,7 @@ describe('loadRules', () => {
         const fsExistsSyncSpy = jest.spyOn(fs, 'existsSync').mockImplementation((path) => {
             return path === stuntmanConfig.mock.rulesPath;
         });
-        const globSyncSpy = jest.spyOn(glob, 'sync').mockImplementation(() => {
+        const globSyncSpy = jest.spyOn(glob, 'globSync').mockImplementation(() => {
             return mockedRules.filter((p) => /tsImportBug/.test(p));
         });
 
