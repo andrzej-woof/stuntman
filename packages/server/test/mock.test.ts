@@ -7,4 +7,4 @@ import { stuntmanConfig } from '@stuntman/shared';
 test('TODO', async () => {
     const mock = new Mock(stuntmanConfig);
     expect(mock).toHaveProperty('start');
-})
+});

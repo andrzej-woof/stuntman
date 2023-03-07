@@ -5,7 +5,7 @@ import { getTrafficStore } from '../storage';
 import { getRuleExecutor } from '../ruleExecutor';
 import { logger, AppError, HttpCode, MAX_RULE_TTL_SECONDS, stringify, INDEX_DTS, errorToLog } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
-import RequestContext from '../requestContext';
+import { RequestContext } from '../requestContext';
 import serializeJavascript from 'serialize-javascript';
 import LRUCache from 'lru-cache';
 import { validateDeserializedRule } from './validators';

@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
-export default class RequestContext {
+export class RequestContext {
     static _bindings: WeakMap<Request, RequestContext> = new WeakMap<Request, RequestContext>();
 
     public readonly mockUuid;

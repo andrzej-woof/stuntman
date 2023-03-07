@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getRuleExecutor } from './ruleExecutor';
 import { getTrafficStore } from './storage';
 import { RawHeaders, logger, HttpCode, naiveGQLParser, escapeStringRegexp, errorToLog } from '@stuntman/shared';
-import RequestContext from './requestContext';
+import { RequestContext } from './requestContext';
 import type * as Stuntman from '@stuntman/shared';
 import { IPUtils } from './ipUtils';
 import LRUCache from 'lru-cache';
@@ -270,6 +270,7 @@ export class Mock {
                 },
                 'outgoing request attempt'
             );
+            // TODO migrate to node-libcurl
             targetResponse = await fetchRequest(mockEntry.modifiedRequest.url, requestOptions);
         } catch (error) {
             logger.error(
