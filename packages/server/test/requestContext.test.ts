@@ -12,8 +12,10 @@ test('requestContext', async () => {
         })
     );
     const boundContext = {};
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     RequestContext.bind(boundContext, uuid);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     expect(RequestContext.get(boundContext)).toEqual(
         expect.objectContaining({
@@ -21,6 +23,7 @@ test('requestContext', async () => {
             uuid: expect.stringMatching(/^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$/i),
         })
     );
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     expect(RequestContext.get({})).toBeNull();
 });
