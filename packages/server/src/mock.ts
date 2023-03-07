@@ -6,7 +6,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getRuleExecutor } from './ruleExecutor';
 import { getTrafficStore } from './storage';
-import { RawHeaders, logger, HttpCode, naiveGQLParser, escapeStringRegexp, errorToLog } from '@stuntman/shared';
+import { RawHeaders, logger, HttpCode, naiveGQLParser, escapeStringRegexp, errorToLog, HTTP_METHODS } from '@stuntman/shared';
 import { RequestContext } from './requestContext';
 import type * as Stuntman from '@stuntman/shared';
 import { IPUtils } from './ipUtils';
@@ -80,11 +80,11 @@ export class Mock {
         const originalHostname = req.headers.host || req.hostname;
         const unproxiedHostname = req.hostname.replace(this.MOCK_DOMAIN_REGEX, '');
         const isProxiedHostname = originalHostname !== unproxiedHostname;
-        const originalRequest = {
+        const originalRequest: Stuntman.Request = {
             id: requestUuid,
             timestamp,
             url: `${req.protocol}://${req.hostname}${req.originalUrl}`,
-            method: req.method,
+            method: req.method.toUpperCase() as Stuntman.HttpMethod,
             rawHeaders: new RawHeaders(...req.rawHeaders),
             ...((Buffer.isBuffer(req.body) && { body: req.body.toString('utf-8') }) ||
                 (typeof req.body === 'string' && { body: req.body })),
@@ -260,7 +260,7 @@ export class Mock {
             const requestOptions = {
                 headers: mockEntry.modifiedRequest.rawHeaders,
                 body: mockEntry.modifiedRequest.body,
-                method: mockEntry.modifiedRequest.method.toUpperCase() as Dispatcher.HttpMethod,
+                method: mockEntry.modifiedRequest.method,
             };
             logger.debug(
                 {
@@ -337,13 +337,17 @@ export class Mock {
         const protocol = (this.MOCK_DOMAIN_REGEX.exec(req.hostname) || [])[2] || req.protocol;
         const port = (this.MOCK_DOMAIN_REGEX.exec(req.hostname) || [])[1] || undefined;
 
+        if (!HTTP_METHODS.includes(req.method.toUpperCase() as Stuntman.HttpMethod)) {
+            throw new Error(`unrecognized http method "${req.method}"`);
+        }
+
         // TODO unproxied req might fail if there's a signed url :shrug:
         // but then we can probably switch DNS for some particular 3rd party server to point to mock
         // and in mock have a mapping rule for that domain to point directly to some IP :thinking:
         return {
             url: `${protocol}://${req.hostname.replace(this.MOCK_DOMAIN_REGEX, '')}${port ? `:${port}` : ''}${req.originalUrl}`,
             rawHeaders: new RawHeaders(...req.rawHeaders.map((h) => h.replace(this.MOCK_DOMAIN_REGEX, ''))),
-            method: req.method,
+            method: req.method.toUpperCase() as Stuntman.HttpMethod,
             ...(Buffer.isBuffer(req.body) && { body: req.body.toString('utf-8') }),
         };
     }

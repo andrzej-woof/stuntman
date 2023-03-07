@@ -10,7 +10,7 @@ type GQLRequestMatcher = {
     variables?: ObjectKeyValueMatcher[];
     query?: string | RegExp;
     type?: 'query' | 'mutation';
-    methodName?: string | RegExp;
+    methodName?: Stuntman.HttpMethod | RegExp;
 };
 
 type MatchBuilderVariables = {

@@ -90,11 +90,14 @@ export interface RawHeadersInterface extends Array<string> {
     toHeaderPairs: () => readonly [string, string][];
 }
 
+export const HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'] as const;
+export type HttpMethod = typeof HTTP_METHODS[number];
+
 export type BaseRequest = {
     rawHeaders: RawHeadersInterface;
     url: string;
     body?: any;
-    method: string;
+    method: HttpMethod;
 };
 
 export type Request = BaseRequest & {
