@@ -31,7 +31,7 @@ export class Mock {
     protected ipUtils: IPUtils | null = null;
     private _api: API | null = null;
 
-    get apiServer() {
+    protected get apiServer() {
         if (this.options.api.disabled) {
             return null;
         }
@@ -325,12 +325,26 @@ export class Mock {
             throw new Error('mock server not started');
         }
         if (!this.options.api.disabled) {
-            this.apiServer?.stop();
+            if (!this.apiServer) {
+                logger.warn('no api server');
+            } else {
+                try {
+                    this.apiServer.stop();
+                } catch (error) {
+                    logger.error(error, 'problem closing api server');
+                }
+            }
         }
         this.server.close((error) => {
-            logger.warn(error, 'problem closing server');
+            logger.warn(error, 'problem closing http server');
             this.server = null;
         });
+        if (this.serverHttps) {
+            this.serverHttps.close((error) => {
+                logger.warn(error, 'problem closing https server');
+                this.server = null;
+            });
+        }
     }
 
     protected unproxyRequest(req: express.Request): Stuntman.BaseRequest {
