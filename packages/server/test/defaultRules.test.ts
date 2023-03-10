@@ -5,7 +5,7 @@ import { catchAllRule } from '../src/rules/catchAll';
 import { RawHeaders } from '@stuntman/shared';
 import { echoRule } from '../src/rules/echo';
 
-const request = {
+const request: Stuntman.Request = {
     id: uuidv4(),
     method: 'POST',
     rawHeaders: new RawHeaders(),

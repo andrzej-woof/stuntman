@@ -320,7 +320,8 @@ export class Mock {
         });
     }
 
-    public stop() {
+    public async stop(): Promise<void> {
+        const closePromises: Promise<void>[] = [];
         if (!this.server) {
             throw new Error('mock server not started');
         }
@@ -328,23 +329,56 @@ export class Mock {
             if (!this.apiServer) {
                 logger.warn('no api server');
             } else {
-                try {
-                    this.apiServer.stop();
-                } catch (error) {
-                    logger.error(error, 'problem closing api server');
-                }
+                closePromises.push(
+                    new Promise<void>((resolve) => {
+                        if (!this.apiServer) {
+                            resolve();
+                            return;
+                        }
+                        this.apiServer
+                            .stop()
+                            .then(() => resolve())
+                            .catch((error) => {
+                                logger.error(error, 'problem closing api server');
+                                resolve();
+                            });
+                    })
+                );
             }
         }
-        this.server.close((error) => {
-            logger.warn(error, 'problem closing http server');
-            this.server = null;
-        });
+        closePromises.push(
+            new Promise<void>((resolve) => {
+                if (!this.server) {
+                    resolve();
+                    return;
+                }
+                this.server.close((error) => {
+                    if (error) {
+                        logger.warn(error, 'problem closing http server');
+                    }
+                    this.server = null;
+                    resolve();
+                });
+            })
+        );
         if (this.serverHttps) {
-            this.serverHttps.close((error) => {
-                logger.warn(error, 'problem closing https server');
-                this.server = null;
-            });
+            closePromises.push(
+                new Promise<void>((resolve) => {
+                    if (!this.serverHttps) {
+                        resolve();
+                        return;
+                    }
+                    this.serverHttps.close((error) => {
+                        if (error) {
+                            logger.warn(error, 'problem closing https server');
+                        }
+                        this.server = null;
+                        resolve();
+                    });
+                })
+            );
         }
+        await Promise.all(closePromises);
     }
 
     protected unproxyRequest(req: express.Request): Stuntman.BaseRequest {

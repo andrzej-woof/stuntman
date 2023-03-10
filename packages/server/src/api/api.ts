@@ -18,13 +18,16 @@ type ApiOptions = Stuntman.ApiConfig & {
 const API_KEY_HEADER = 'x-api-key';
 
 export class API {
-    protected options: Required<ApiOptions>;
+    protected options: Required<Exclude<ApiOptions, { disabled: true } & { mockUuid: string }>>;
     protected webGuiOptions: Stuntman.WebGuiConfig;
     protected apiApp: ExpressServer | null = null;
     trafficStore: LRUCache<string, Stuntman.LogEntry>;
     server: http.Server | null = null;
 
     constructor(options: ApiOptions, webGuiOptions: Stuntman.WebGuiConfig = { disabled: false }) {
+        if (options.disabled) {
+            throw new Error('unable to run with disabled flag');
+        }
         if (!options.apiKeyReadOnly !== !options.apiKeyReadWrite) {
             throw new Error('apiKeyReadOnly and apiKeyReadWrite options need to be set either both or none');
         }
@@ -240,13 +243,22 @@ export class API {
         });
     }
 
-    public stop() {
+    public async stop(): Promise<void> {
         if (!this.server) {
             throw new Error('mock server not started');
         }
-        this.server.close((error) => {
-            logger.warn(error, 'problem closing server');
-            this.server = null;
+        return new Promise<void>((resolve) => {
+            if (!this.server) {
+                resolve();
+                return;
+            }
+            this.server.close((error) => {
+                if (error) {
+                    logger.warn(error, 'problem closing server');
+                }
+                this.server = null;
+                resolve();
+            });
         });
     }
 }

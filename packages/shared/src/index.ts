@@ -91,7 +91,7 @@ export interface RawHeadersInterface extends Array<string> {
 }
 
 export const HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'] as const;
-export type HttpMethod = typeof HTTP_METHODS[number];
+export type HttpMethod = (typeof HTTP_METHODS)[number];
 
 export type BaseRequest = {
     rawHeaders: RawHeadersInterface;
@@ -188,12 +188,14 @@ export type WebGuiConfig = {
     disabled: boolean;
 };
 
-export type ApiConfig = {
-    port: number;
-    disabled: boolean;
-    apiKeyReadWrite: string | null;
-    apiKeyReadOnly: string | null;
-};
+export type ApiConfig =
+    | { disabled: true }
+    | {
+          port: number;
+          disabled: false;
+          apiKeyReadWrite: string | null;
+          apiKeyReadOnly: string | null;
+      };
 
 export type ClientConfig = {
     protocol: 'http' | 'https';

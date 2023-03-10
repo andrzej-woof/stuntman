@@ -7,11 +7,11 @@ import { stuntmanConfig } from '@stuntman/shared';
 import { RawHeaders } from '@stuntman/shared';
 import { MockRequest } from '@jest-mock/express/dist/src/request';
 
-const getMockReq = (input: MockRequest) => {
+const getMockReq = (input?: MockRequest) => {
     const values: MockRequest = {
         ...input,
     };
-    if (input.url) {
+    if (input?.url) {
         const url = new URL(input.url);
         values.host ??= url.host;
         values.hostname ??= url.hostname;
@@ -24,7 +24,7 @@ const getMockReq = (input: MockRequest) => {
         }, {} as Record<string, string>);
         values.query = values.params;
     }
-    if (input.rawHeaders) {
+    if (input?.rawHeaders) {
         values.headers = RawHeaders.toHeadersRecord(input.rawHeaders);
         values.rawHeaders = new RawHeaders(...input.rawHeaders);
     }
@@ -52,6 +52,10 @@ describe('mock constructor', () => {
 
     test('no external dns', async () => {
         new Mock({ ...stuntmanConfig, mock: { ...stuntmanConfig.mock, externalDns: [] } });
+    });
+
+    test('api disabled', async () => {
+        new Mock({ ...stuntmanConfig, api: { disabled: true } });
     });
 });
 
@@ -117,6 +121,10 @@ test('unproxyRequest', async () => {
         body: 'http://www.example.com/ something in the body',
     });
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    expect(() => mock['unproxyRequest'](getMockReq({ method: 'INVALID' }))).toThrow();
+    
     // TODO protocol, port
 });
 
@@ -152,12 +160,36 @@ test('removeProxyPort', async () => {
     req.url = 'http://www.example.com.stuntman:1955/somethingelse/path?query=param';
     mock['removeProxyPort'](req);
     expect(req).toEqual({ ...reqClone });
+
+    req.rawHeaders.remove('host');
+    req.url = 'http://www.example.com.stuntman:1955/somethingelse/path?query=param';
+    mock['removeProxyPort'](req);
+    reqClone.rawHeaders.remove('host');
+    expect(req).toEqual(reqClone);
 });
 
-test('stop', async () => {
-    const mock = new Mock(stuntmanConfig);
-    expect(() => mock.stop()).toThrow();
-    Reflect.set(mock, 'server', { close: jest.fn() });
-    mock.stop();
-    expect(mock['server']?.close).toBeCalled();
+describe('stop', () => {
+    test('not started', async () => {
+        const mock = new Mock(stuntmanConfig);
+        await expect(async () => mock.stop()).rejects.toThrow();
+    });
+
+    test('http', async () => {
+        const mock = new Mock(stuntmanConfig);
+        const serverClose = jest.fn((cb: any) => cb());
+        Reflect.set(mock, 'server', { close: serverClose });
+        await mock.stop();
+        expect(serverClose).toBeCalled();
+    });
+
+    test('http & https', async () => {
+        const mock = new Mock(stuntmanConfig);
+        const serverClose = jest.fn((cb: any) => cb());
+        const serverHttpsClose = jest.fn((cb: any) => cb());
+        Reflect.set(mock, 'server', { close: serverClose });
+        Reflect.set(mock, 'serverHttps', { close: serverHttpsClose });
+        await mock.stop();
+        expect(serverClose).toBeCalled();
+        expect(serverHttpsClose).toBeCalled();
+    });
 });

@@ -65,7 +65,8 @@ export class IPUtils {
                 this.externalDns.resolve(hostname, callback);
                 return;
             }
-            dns.lookup(hostname, callback);
+            // TODO general handling of IPv6
+            dns.resolve4(hostname, callback);
         });
     }
 
