@@ -19,6 +19,10 @@ type NonObject = string | number | boolean | symbol | undefined | null | any[];
 
 export type SharedProps<T1, T2> = Pick<T1 | T2, Extract<keyof T1, keyof T2>>;
 
+export type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
+    [Property in Key]-?: Type[Property];
+};
+
 interface SerializableTypesRecord<T> {
     [k: string | number]: T;
 }

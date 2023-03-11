@@ -13,10 +13,6 @@ import { IPUtils } from './ipUtils';
 import LRUCache from 'lru-cache';
 import { API } from './api/api';
 
-type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
-    [Property in Key]-?: Type[Property];
-};
-
 // TODO add proper web proxy mode
 
 export class Mock {
@@ -71,6 +67,8 @@ export class Mock {
                 : new IPUtils({ mockUuid: this.mockUuid, externalDns: this.options.mock.externalDns });
 
         this.requestHandler = this.requestHandler.bind(this);
+        this.bindRequestContext = this.bindRequestContext.bind(this);
+        this.errorHandler = this.errorHandler.bind(this);
     }
 
     private async requestHandler(req: express.Request, res: express.Response): Promise<void> {
@@ -93,7 +91,7 @@ export class Mock {
         const logContext: Record<string, any> = {
             requestId: originalRequest.id,
         };
-        const mockEntry: WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'> = {
+        const mockEntry: Stuntman.WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'> = {
             originalRequest,
             modifiedRequest: {
                 ...this.unproxyRequest(req),
@@ -105,7 +103,7 @@ export class Mock {
         if (!isProxiedHostname) {
             this.removeProxyPort(mockEntry.modifiedRequest);
         }
-        const matchingRule = await getRuleExecutor(this.mockUuid).findMatchingRule(mockEntry.modifiedRequest);
+        const matchingRule = await this.ruleExecutor.findMatchingRule(mockEntry.modifiedRequest);
         if (matchingRule) {
             mockEntry.mockRuleId = matchingRule.id;
             mockEntry.labels = matchingRule.labels;
@@ -206,7 +204,27 @@ export class Mock {
         res.end(Buffer.from(modifedResponse.body, 'binary'));
     }
 
-    init() {
+    private bindRequestContext(req: express.Request, _res: express.Response, next: express.NextFunction) {
+        RequestContext.bind(req, this.mockUuid);
+        next();
+    }
+
+    private errorHandler(error: Error, req: express.Request, res: express.Response) {
+        const ctx: RequestContext | null = RequestContext.get(req);
+        const uuid = ctx?.uuid || uuidv4();
+        logger.error({ error: errorToLog(error), uuid }, 'unexpected error');
+        if (res) {
+            res.status(HttpCode.INTERNAL_SERVER_ERROR).json({
+                error: { message: error.message, httpCode: HttpCode.INTERNAL_SERVER_ERROR, uuid },
+            });
+            return;
+        }
+        // eslint-disable-next-line no-console
+        console.error('mock server encountered a critical error. exiting');
+        process.exit(1);
+    }
+
+    private init() {
         if (this.mockApp) {
             return;
         }
@@ -214,32 +232,16 @@ export class Mock {
         // TODO for now request body is just a buffer passed further, not inflated
         this.mockApp.use(express.raw({ type: '*/*' }));
 
-        this.mockApp.use((req: express.Request, _res: express.Response, next: express.NextFunction) => {
-            RequestContext.bind(req, this.mockUuid);
-            next();
-        });
+        this.mockApp.use(this.bindRequestContext);
 
         this.mockApp.all(/.*/, this.requestHandler);
 
-        this.mockApp.use((error: Error, req: express.Request, res: express.Response) => {
-            const ctx: RequestContext | null = RequestContext.get(req);
-            const uuid = ctx?.uuid || uuidv4();
-            logger.error({ error: errorToLog(error), uuid }, 'unexpected error');
-            if (res) {
-                res.status(HttpCode.INTERNAL_SERVER_ERROR).json({
-                    error: { message: error.message, httpCode: HttpCode.INTERNAL_SERVER_ERROR, uuid },
-                });
-                return;
-            }
-            // eslint-disable-next-line no-console
-            console.error('mock server encountered a critical error. exiting');
-            process.exit(1);
-        });
+        this.mockApp.use(this.errorHandler);
     }
 
     private async proxyRequest(
         req: express.Request,
-        mockEntry: WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'>,
+        mockEntry: Stuntman.WithRequiredProperty<Stuntman.LogEntry, 'modifiedRequest'>,
         logContext: any
     ) {
         let controller: AbortController | null = new AbortController();
@@ -394,7 +396,15 @@ export class Mock {
         // and in mock have a mapping rule for that domain to point directly to some IP :thinking:
         return {
             url: `${protocol}://${req.hostname.replace(this.MOCK_DOMAIN_REGEX, '')}${port ? `:${port}` : ''}${req.originalUrl}`,
-            rawHeaders: new RawHeaders(...req.rawHeaders.map((h) => h.replace(this.MOCK_DOMAIN_REGEX, ''))),
+            rawHeaders: new RawHeaders(
+                ...req.rawHeaders.map((h) => {
+                    let outputHeader = h;
+                    if (this.MOCK_DOMAIN_REGEX.test(outputHeader)) {
+                        outputHeader = outputHeader.replace(this.MOCK_DOMAIN_REGEX, '').replace(/^https?/i, protocol);
+                    }
+                    return outputHeader;
+                })
+            ),
             method: req.method.toUpperCase() as Stuntman.HttpMethod,
             ...(Buffer.isBuffer(req.body) && { body: req.body.toString('utf-8') }),
         };
