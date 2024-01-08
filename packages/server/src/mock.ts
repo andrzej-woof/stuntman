@@ -71,6 +71,42 @@ export class Mock {
         this.errorHandler = this.errorHandler.bind(this);
     }
 
+    private extractJwt(req: Stuntman.Request): any {
+        try {
+            const authorizationHeaderIndex = req.rawHeaders.findIndex((header) => header.toLowerCase() === 'authorization');
+            if (authorizationHeaderIndex < 0) {
+                return { result: false, description: 'missing authorization header' };
+            }
+            const authorizationHeaderValue = req.rawHeaders[authorizationHeaderIndex + 1];
+            const token =
+                authorizationHeaderValue &&
+                (authorizationHeaderValue.startsWith('Bearer ')
+                    ? authorizationHeaderValue.split(' ')[1]
+                    : authorizationHeaderValue);
+            if (!token) {
+                return undefined;
+            }
+            const base64Url = token.split('.')[1];
+            if (!base64Url) {
+                return undefined;
+            }
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                Buffer.from(base64, 'base64')
+                    .toString('ascii')
+                    .split('')
+                    .map(function (c) {
+                        return `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`;
+                    })
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        } catch (error) {
+            // TODO
+        }
+        return undefined;
+    }
+
     private async requestHandler(req: express.Request, res: express.Response): Promise<void> {
         const ctx: RequestContext | null = RequestContext.get(req);
         const requestUuid = ctx?.uuid || uuidv4();
@@ -98,6 +134,7 @@ export class Mock {
                 id: requestUuid,
                 timestamp,
                 ...(originalRequest.body && { gqlBody: naiveGQLParser(originalRequest.body) }),
+                jwt: this.extractJwt(originalRequest),
             },
         };
         if (!isProxiedHostname) {

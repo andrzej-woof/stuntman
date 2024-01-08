@@ -108,6 +108,7 @@ export type Request = BaseRequest & {
     id: string;
     timestamp: number;
     gqlBody?: GQLRequestBody | undefined;
+    jwt?: any | undefined;
 };
 
 export type Response = {
