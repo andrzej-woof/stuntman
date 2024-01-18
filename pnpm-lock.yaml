@@ -54,13 +54,13 @@ importers:
   apps/example:
     dependencies:
       '@stuntman/client':
-        specifier: workspace:^0.2.2
+        specifier: workspace:^0.2.3
         version: link:../../packages/client
       '@stuntman/server':
-        specifier: workspace:^0.2.2
+        specifier: workspace:^0.2.3
         version: link:../../packages/server
       '@stuntman/shared':
-        specifier: workspace:^0.2.2
+        specifier: workspace:^0.2.3
         version: link:../../packages/shared
       express:
         specifier: 5.0.0-beta.1
@@ -97,7 +97,7 @@ importers:
   packages/client:
     dependencies:
       '@stuntman/shared':
-        specifier: workspace:^0.2.2
+        specifier: workspace:^0.2.3
         version: link:../shared
       serialize-javascript:
         specifier: 6.0.1
@@ -128,7 +128,7 @@ importers:
   packages/server:
     dependencies:
       '@stuntman/shared':
-        specifier: workspace:^0.2.2
+        specifier: workspace:^0.2.3
         version: link:../shared
       await-lock:
         specifier: 2.2.2

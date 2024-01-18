@@ -56,7 +56,7 @@ export type LocalVariables = Record<string, SerializableTypes>;
 
 export type RuleMatchResult =
     | boolean
-    | { result: boolean; enableRuleIds?: string[]; disableRuleIds?: string[]; description?: string };
+    | { result: boolean; enableRuleIds?: string[]; disableRuleIds?: string[]; description?: string; labels?: string[] };
 
 export type RemotableFunction<T extends Function> = {
     localFn: T;
