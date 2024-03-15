@@ -1,95 +1,95 @@
 name: Continous integration
 
 on:
-  push:
-      branches:
-        - master
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    push:
+        branches:
+            - master
+    pull_request:
+        types: [opened, synchronize, reopened, ready_for_review]
 
 env:
-  STUNTMAN_NPM_ACCESS_TOKEN: ${{ secrets.STUNTMAN_NPM_ACCESS_TOKEN }}
+    STUNTMAN_NPM_ACCESS_TOKEN: ${{ secrets.STUNTMAN_NPM_ACCESS_TOKEN }}
 
 jobs:
-  checks:
-    runs-on: ubuntu-latest
+    checks:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
 
-      - name: Install Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
+            - name: Install Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version-file: '.nvmrc'
 
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 7
-          run_install: false
+            - uses: pnpm/action-setup@v2
+              name: Install pnpm
+              id: pnpm-install
+              with:
+                  version: 8
+                  run_install: false
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+            - name: Get pnpm store directory
+              id: pnpm-cache
+              shell: bash
+              run: |
+                  echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v3
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            - uses: actions/cache@v3
+              name: Setup pnpm cache
+              with:
+                  path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+                  key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pnpm-store-
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --strict-peer-dependencies
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile --strict-peer-dependencies
 
-      - name: Format & Lint
-        run: pnpm lint
+            - name: Format & Lint
+              run: pnpm lint
 
-      - name: Build
-        run: pnpm build
+            - name: Build
+              run: pnpm build
 
-      - name: Unit tests
-        run: pnpm test
+            - name: Unit tests
+              run: pnpm test
 
-      - name: Integration tests
-        run: pnpm test:example
+            - name: Integration tests
+              run: pnpm test:example
 
-      - name: Coveralls - @stuntman/shared
-        uses: coverallsapp/github-action@v1
-        with:
-          flag-name: unit-shared
-          path-to-lcov: packages/shared/coverage/lcov.info
-          base-path: packages/shared
-          parallel: true
+            - name: Coveralls - @stuntman/shared
+              uses: coverallsapp/github-action@v1
+              with:
+                  flag-name: unit-shared
+                  path-to-lcov: packages/shared/coverage/lcov.info
+                  base-path: packages/shared
+                  parallel: true
 
-      - name: Coveralls - @stuntman/client
-        uses: coverallsapp/github-action@v1
-        with:
-          flag-name: unit-client
-          path-to-lcov: packages/client/coverage/lcov.info
-          base-path: packages/client
-          parallel: true
+            - name: Coveralls - @stuntman/client
+              uses: coverallsapp/github-action@v1
+              with:
+                  flag-name: unit-client
+                  path-to-lcov: packages/client/coverage/lcov.info
+                  base-path: packages/client
+                  parallel: true
 
-      - name: Coveralls - @stuntman/server
-        uses: coverallsapp/github-action@v1
-        with:
-          flag-name: unit-server
-          path-to-lcov: packages/server/coverage/lcov.info
-          base-path: packages/server
-          parallel: true
+            - name: Coveralls - @stuntman/server
+              uses: coverallsapp/github-action@v1
+              with:
+                  flag-name: unit-server
+                  path-to-lcov: packages/server/coverage/lcov.info
+                  base-path: packages/server
+                  parallel: true
 
-  finish:
-    needs: checks
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@v1
-      with:
-        parallel-finished: true
-        carryforward: "unit-shared,unit-client,unit-server"
+    finish:
+        needs: checks
+        if: ${{ always() }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Coveralls Finished
+              uses: coverallsapp/github-action@v1
+              with:
+                  parallel-finished: true
+                  carryforward: 'unit-shared,unit-client,unit-server'
