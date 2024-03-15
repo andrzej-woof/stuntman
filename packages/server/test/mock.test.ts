@@ -95,7 +95,7 @@ describe('start', () => {
         const mock = new Mock({ ...stuntmanConfig, api: { disabled: true }, mock: noHttpsConfig });
         mock.start();
         expect(mock['mockApp']?.listen).toBeCalled();
-        expect(https.createServer).toBeCalled();
+        expect(https.createServer).not.toBeCalled();
         expect(() => mock.start()).toThrow();
     });
 
