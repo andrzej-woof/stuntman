@@ -148,7 +148,7 @@ test('errorHandler', async () => {
 });
 
 test('unproxyRequest', async () => {
-    const mock = new Mock({ ...stuntmanConfig, mock: { ...stuntmanConfig.mock, domain: 'mydomain', port: 2015 } });
+    const mock = new Mock({ ...stuntmanConfig, mock: { ...stuntmanConfig.mock, domain: 'mydomain' } });
     expect(
         mock['unproxyRequest'](
             getMockReq({
@@ -309,7 +309,7 @@ test('unproxyRequest', async () => {
 test('removeProxyPort', async () => {
     const mock = new Mock({
         ...stuntmanConfig,
-        mock: { ...stuntmanConfig.mock, port: 2015, httpsPort: 1955, httpsCert: '123', httpsKey: '123' },
+        mock: { ...stuntmanConfig.mock, httpsPort: 1955, httpsCert: '123', httpsKey: '123' },
     });
     const req: Stuntman.Request = {
         id: uuidv4(),
