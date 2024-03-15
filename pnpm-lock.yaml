@@ -109,6 +109,9 @@ importers:
       '@jest/globals':
         specifier: 29.5.0
         version: 29.5.0
+      '@types/jest':
+        specifier: ^29.5.12
+        version: 29.5.12
       '@types/serialize-javascript':
         specifier: 5.0.2
         version: 5.0.2
@@ -173,6 +176,9 @@ importers:
       '@types/glob':
         specifier: 8.1.0
         version: 8.1.0
+      '@types/jest':
+        specifier: ^29.5.12
+        version: 29.5.12
       '@types/serialize-javascript':
         specifier: 5.0.2
         version: 5.0.2
@@ -204,6 +210,9 @@ importers:
       '@types/config':
         specifier: 3.3.0
         version: 3.3.0
+      '@types/jest':
+        specifier: ^29.5.12
+        version: 29.5.12
       jest:
         specifier: 29.5.0
         version: 29.5.0(@types/node@18.14.6)(ts-node@10.9.1)
@@ -2288,6 +2297,13 @@ packages:
     resolution: {integrity: sha512-c3mAZEuK0lvBp8tmuL74XRKn1+y2dcwOUpH7x4WrF6gk1GIgiluDRgMYQtw2OFcBvAJWlt6ASU3tSqxp0Uu0Aw==}
     dependencies:
       '@types/istanbul-lib-report': 3.0.0
+    dev: true
+
+  /@types/jest@29.5.12:
+    resolution: {integrity: sha512-eDC8bTvT/QhYdxJAulQikueigY5AsdBRH2yDKW3yveW7svY3+DzN84/2NUgkw10RTiJbWqZrTtoGVdYlvFJdLw==}
+    dependencies:
+      expect: 29.5.0
+      pretty-format: 29.5.0
     dev: true
 
   /@types/json-schema@7.0.15:
