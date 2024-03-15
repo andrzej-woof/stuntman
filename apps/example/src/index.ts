@@ -26,7 +26,7 @@ const staticLookup = (
             cb(new Error('Unable to find address'), '', 4);
             return;
         }
-        cb(err, addresses[0]!, 4);
+        cb(err, addresses[0] ?? '127.0.0.1', 4);
     });
 };
 
