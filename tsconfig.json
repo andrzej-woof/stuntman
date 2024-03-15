@@ -28,11 +28,5 @@
         "strictNullChecks": true,
         "strictPropertyInitialization": true
     },
-    "exclude": [
-        "jest.config.js",
-        "node_modules",
-        "**/node_modules",
-        "**/*/dist",
-        "**/coverage"
-    ]
+    "exclude": ["jest.config.js", "node_modules", "**/node_modules", "**/*/dist", "**/coverage"]
 }

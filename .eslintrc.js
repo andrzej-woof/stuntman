@@ -3,7 +3,7 @@ module.exports = {
     parser: '@typescript-eslint/parser',
     plugins: ['@typescript-eslint', 'pug', 'css'],
     root: true,
-    ignorePatterns: ["**/*.css", "**/*.scss"],
+    ignorePatterns: ['**/*.css', '**/*.scss'],
     parserOptions: {
         tsconfigRootDir: __dirname,
         sourceType: 'module',
@@ -11,6 +11,6 @@ module.exports = {
     },
     rules: {
         'no-console': 'error',
-        'consistent-return': 'error'
-    }
+        'consistent-return': 'error',
+    },
 };
