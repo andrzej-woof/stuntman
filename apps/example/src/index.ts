@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { stuntmanConfig } from '@stuntman/shared';
 import express from 'express';
 import session from 'express-session';
-import dns from 'node:dns';
+import dns, { LookupAddress } from 'node:dns';
 // using node-fetch to override DNS resolution
 // in real life you can add entries to /etc/hosts or configure DNS in your network
 import nodeFetch from 'node-fetch';
@@ -15,10 +15,10 @@ import https from 'https';
 const staticLookup = (
     hostname: string,
     _options: any,
-    cb: (err: NodeJS.ErrnoException | null, address: string, family: number) => void
+    cb: (err: NodeJS.ErrnoException | null, address: string | LookupAddress[], family: number) => void
 ) => {
     if (/\.stuntman(https?)?$/.test(hostname)) {
-        cb(null, '127.0.0.1', 4);
+        cb(null, [{ address: '127.0.0.1', family: 4 }], 4);
         return;
     }
     dns.resolve4(hostname, (err, addresses) => {
@@ -26,7 +26,11 @@ const staticLookup = (
             cb(new Error('Unable to find address'), '', 4);
             return;
         }
-        cb(err, addresses[0] ?? '127.0.0.1', 4);
+        cb(
+            err,
+            addresses.map((address) => ({ address, family: 4 })),
+            4
+        );
     });
 };
 
