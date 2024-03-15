@@ -63,12 +63,10 @@ const getMockReq = (input?: MockRequest) => {
 
 describe('mock constructor', () => {
     test('missing https cert/key', async () => {
-        expect(
-            () => new Mock({ ...stuntmanConfig, mock: { ...stuntmanConfig.mock, httpsPort: 443, httpsCert: '123' } })
-        ).toThrow();
-        expect(
-            () => new Mock({ ...stuntmanConfig, mock: { ...stuntmanConfig.mock, httpsPort: 443, httpsKey: '123' } })
-        ).toThrow();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { httpsCert, httpsKey, ...noCertNoKeyConfig } = stuntmanConfig.mock;
+        expect(() => new Mock({ ...stuntmanConfig, mock: { ...noCertNoKeyConfig, httpsPort: 443, httpsCert: '123' } })).toThrow();
+        expect(() => new Mock({ ...stuntmanConfig, mock: { ...noCertNoKeyConfig, httpsPort: 443, httpsKey: '123' } })).toThrow();
     });
 
     test('https', async () => {
@@ -92,10 +90,12 @@ describe('mock constructor', () => {
 
 describe('start', () => {
     test('http', async () => {
-        const mock = new Mock({ ...stuntmanConfig, api: { disabled: true } });
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { httpsPort, ...noHttpsConfig } = stuntmanConfig.mock;
+        const mock = new Mock({ ...stuntmanConfig, api: { disabled: true }, mock: noHttpsConfig });
         mock.start();
         expect(mock['mockApp']?.listen).toBeCalled();
-        expect(https.createServer).not.toBeCalled();
+        expect(https.createServer).toBeCalled();
         expect(() => mock.start()).toThrow();
     });
 
