@@ -29,7 +29,7 @@ html
                                 automaticLayout: true,
                                 readOnly: true,
                             });
-                            editor.onDidChangeModel((event) => {
+                            editor.onDidChangeModel(() => {
                                 setTimeout(() => {
                                     editor.getAction('editor.action.formatDocument').run();
                                 }, 100);
