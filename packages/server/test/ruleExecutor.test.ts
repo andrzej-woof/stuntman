@@ -212,7 +212,7 @@ describe('findMatchingRule', () => {
     });
 
     test('disableAfterUse', async () => {
-        const hitRequest = {
+        const hitRequest: Stuntman.Request = {
             id: uuidv4(),
             method: 'GET',
             rawHeaders: new RawHeaders(),
@@ -259,7 +259,7 @@ describe('findMatchingRule', () => {
     });
 
     test('removeAfterUse', async () => {
-        const hitRequest = {
+        const hitRequest: Stuntman.Request = {
             id: uuidv4(),
             method: 'GET',
             rawHeaders: new RawHeaders(),

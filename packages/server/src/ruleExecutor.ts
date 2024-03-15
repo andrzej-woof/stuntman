@@ -127,12 +127,16 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
         const logContext: Record<string, any> = {
             requestId: request.id,
         };
+        let dynamicLabels: string[] = [];
         const matchingRule = this.enabledRules.find((rule) => {
             try {
                 const matchResult = rule.matches(request);
                 logger.trace({ ...logContext, matchResult }, `rule match attempt for ${rule.id}`);
                 if (typeof matchResult === 'boolean') {
                     return matchResult;
+                }
+                if (matchResult.labels) {
+                    dynamicLabels = matchResult.labels;
                 }
                 return matchResult.result;
             } catch (error) {
@@ -153,7 +157,11 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
             { ...logContext, matchResultMessage: typeof matchResult !== 'boolean' ? matchResult.description : null },
             'found matching rule'
         );
-        const matchingRuleClone = Object.freeze(Object.assign({}, matchingRule));
+        const matchingRuleClone = Object.freeze(
+            Object.assign({}, matchingRule, {
+                labels: matchingRule.labels ? [...(matchingRule.labels || []), ...dynamicLabels] : dynamicLabels,
+            })
+        );
         ++matchingRule.counter;
         logContext.ruleCounter = matchingRule.counter;
         if (Number.isNaN(matchingRule.counter) || !Number.isFinite(matchingRule.counter)) {

@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/stuntman",
-    "version": "0.2.1",
+    "version": "0.2.4",
     "description": "Stuntman - HTTP proxy / mock with API and client libraries",
     "private": true,
     "main": "index.js",
@@ -41,8 +41,8 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "devDependencies": {
-        "@prettier/plugin-pug": "2.4.1",
-        "@types/node": "18.14.6",
+        "@prettier/plugin-pug": "3.0.0",
+        "@types/node": "20.11.28",
         "@typescript-eslint/eslint-plugin": "7.2.0",
         "@typescript-eslint/parser": "7.2.0",
         "eslint": "8.57.0",
@@ -51,9 +51,9 @@
         "eslint-plugin-jsdoc": "48.2.1",
         "eslint-plugin-pug": "1.2.5",
         "jest": "^29.7.0",
-        "nodemon": "2.0.21",
-        "prettier": "2.8.4",
-        "ts-node": "10.9.1",
+        "nodemon": "3.1.0",
+        "prettier": "3.2.5",
+        "ts-node": "10.9.2",
         "typescript": "^5.4.2"
     },
     "files": [

@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/client",
-    "version": "0.2.1",
+    "version": "0.2.4",
     "description": "Stuntman - HTTP proxy / mock API client",
     "main": "dist/index.js",
     "repository": {
@@ -12,7 +12,7 @@
         "url": "https://github.com/andrzej-woof/stuntman/issues"
     },
     "scripts": {
-        "test": "LOG_LEVEL=silent SUPPRESS_NO_CONFIG_WARNING=1 jest --coverage",
+        "test": "NODE_ENV=test LOG_LEVEL=silent SUPPRESS_NO_CONFIG_WARNING=1 jest --coverage",
         "clean": "rm -fr dist",
         "build": "tsc",
         "lint": "prettier --check \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\"",
@@ -39,7 +39,7 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "dependencies": {
-        "@stuntman/shared": "workspace:^0.2.1",
+        "@stuntman/shared": "workspace:^0.2.4",
         "serialize-javascript": "6.0.1",
         "uuid": "9.0.0"
     },

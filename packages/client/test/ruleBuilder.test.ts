@@ -1244,7 +1244,7 @@ describe('rule initialized', () => {
             };
             const gqlRequest: Stuntman.Request = {
                 id: '12345',
-                method: 'post',
+                method: 'POST',
                 rawHeaders: new RawHeaders(),
                 timestamp: Date.now(),
                 url: 'http://test.invalid/graphql',
@@ -1359,10 +1359,10 @@ describe('rule initialized', () => {
 
             builder = ruleBuilder().onAnyRequest();
             builder.withBodyGql({
-                methodName: 'something',
+                operationName: 'something',
             });
             expect(callRemotableFunction(builder['rule'].matches, gqlRequest)).toEqual({
-                description: 'methodName "something" !== "author"',
+                description: 'operationName "something" !== "myOperation"',
                 result: false,
             });
 

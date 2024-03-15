@@ -99,7 +99,7 @@ export class Client {
         this.options = {
             ...stuntmanConfig.client,
             ...options,
-            port: options?.port || options?.protocol ? (options.protocol === 'https' ? 443 : 80) : stuntmanConfig.client.port,
+            port: options?.port || (options?.protocol ? (options.protocol === 'https' ? 443 : 80) : stuntmanConfig.client.port),
         };
     }
 

@@ -36,7 +36,7 @@ const serializedRule = {
     storeTraffic: true,
 };
 
-const request = {
+const request: Stuntman.Request = {
     id: uuidv4(),
     method: 'POST',
     rawHeaders: new RawHeaders(),

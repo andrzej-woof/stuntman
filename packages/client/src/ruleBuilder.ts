@@ -10,7 +10,7 @@ type GQLRequestMatcher = {
     variables?: ObjectKeyValueMatcher[];
     query?: string | RegExp;
     type?: 'query' | 'mutation';
-    methodName?: string | RegExp;
+    methodName?: Stuntman.HttpMethod | RegExp;
 };
 
 type MatchBuilderVariables = {
@@ -23,6 +23,7 @@ type MatchBuilderVariables = {
     bodyText?: string | RegExp | null;
     bodyJson?: ObjectKeyValueMatcher[];
     bodyGql?: GQLRequestMatcher;
+    jwt?: ObjectKeyValueMatcher[];
 };
 
 // TODO add fluent match on multipart from data
@@ -196,6 +197,19 @@ function matchFunction(req: Stuntman.Request): Stuntman.RuleMatchResult {
                         description: `headerMatcher.get("${headerMatcher.key}") = "${headerMatcher.value}"`,
                     };
                 }
+            }
+        }
+    }
+    if (localMatchBuilderVariables.jwt) {
+        if (!req.jwt) {
+            return { result: false, description: `no jwt found on request` };
+        }
+        for (const jsonMatcher of Array.isArray(localMatchBuilderVariables.jwt)
+            ? localMatchBuilderVariables.jwt
+            : [localMatchBuilderVariables.jwt]) {
+            const matchObjectResult = matchObject(req.jwt, jsonMatcher.key, jsonMatcher.value);
+            if (!matchObjectResult.result) {
+                return { result: false, description: `jwt $.${jsonMatcher.key} != "${jsonMatcher.value}"` };
             }
         }
     }
@@ -527,6 +541,35 @@ class RuleBuilderInitialized extends RuleBuilderRequestInitialized {
             throw new Error('cannot use both withBodyText and withoutBody');
         }
         this._matchBuilderVariables.bodyText = null;
+        return this;
+    }
+
+    withJwt(hasKey: string): RuleBuilderInitialized;
+    withJwt(hasKey: string, withValue: ObjectValueMatcher): RuleBuilderInitialized;
+    withJwt(matches: ObjectKeyValueMatcher): RuleBuilderInitialized;
+    withJwt(keyOrMatcher: string | ObjectKeyValueMatcher, withValue?: ObjectValueMatcher): RuleBuilderInitialized {
+        const keyRegex = /^(?:(?:[a-z0-9_-]+)|(?:\[[0-9]*\]))(?:\.(?:(?:[a-z0-9_-]+)|(?:\[[0-9]*\])))*$/i;
+        if (!this._matchBuilderVariables.jwt) {
+            this._matchBuilderVariables.jwt = [];
+        }
+        if (typeof keyOrMatcher === 'string') {
+            if (!keyRegex.test(keyOrMatcher)) {
+                throw new Error(`invalid key "${keyOrMatcher}"`);
+            }
+            if (withValue === undefined) {
+                this._matchBuilderVariables.jwt.push({ key: keyOrMatcher });
+            } else {
+                this._matchBuilderVariables.jwt.push({ key: keyOrMatcher, value: withValue });
+            }
+            return this;
+        }
+        if (withValue !== undefined) {
+            throw new Error('invalid usage');
+        }
+        if (!keyRegex.test(keyOrMatcher.key)) {
+            throw new Error(`invalid key "${keyOrMatcher}"`);
+        }
+        this._matchBuilderVariables.jwt.push(keyOrMatcher);
         return this;
     }
 

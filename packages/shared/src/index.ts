@@ -19,6 +19,10 @@ type NonObject = string | number | boolean | symbol | undefined | null | any[];
 
 export type SharedProps<T1, T2> = Pick<T1 | T2, Extract<keyof T1, keyof T2>>;
 
+export type WithRequiredProperty<Type, Key extends keyof Type> = Type & {
+    [Property in Key]-?: Type[Property];
+};
+
 interface SerializableTypesRecord<T> {
     [k: string | number]: T;
 }
@@ -52,7 +56,7 @@ export type LocalVariables = Record<string, SerializableTypes>;
 
 export type RuleMatchResult =
     | boolean
-    | { result: boolean; enableRuleIds?: string[]; disableRuleIds?: string[]; description?: string };
+    | { result: boolean; enableRuleIds?: string[]; disableRuleIds?: string[]; description?: string; labels?: string[] };
 
 export type RemotableFunction<T extends Function> = {
     localFn: T;
@@ -90,17 +94,21 @@ export interface RawHeadersInterface extends Array<string> {
     toHeaderPairs: () => readonly [string, string][];
 }
 
+export const HTTP_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'] as const;
+export type HttpMethod = (typeof HTTP_METHODS)[number];
+
 export type BaseRequest = {
     rawHeaders: RawHeadersInterface;
     url: string;
     body?: any;
-    method: string;
+    method: HttpMethod;
 };
 
 export type Request = BaseRequest & {
     id: string;
     timestamp: number;
     gqlBody?: GQLRequestBody | undefined;
+    jwt?: any | undefined;
 };
 
 export type Response = {
@@ -185,12 +193,14 @@ export type WebGuiConfig = {
     disabled: boolean;
 };
 
-export type ApiConfig = {
-    port: number;
-    disabled: boolean;
-    apiKeyReadWrite: string | null;
-    apiKeyReadOnly: string | null;
-};
+export type ApiConfig =
+    | { disabled: true }
+    | {
+          port: number;
+          disabled: false;
+          apiKeyReadWrite: string | null;
+          apiKeyReadOnly: string | null;
+      };
 
 export type ClientConfig = {
     protocol: 'http' | 'https';
