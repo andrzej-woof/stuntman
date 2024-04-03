@@ -12,7 +12,7 @@ jest.mock('fs', () => ({
 }));
 
 test('defaults', async () => {
-    expect(config).toEqual({
+    expect(config()).toEqual({
         api: {
             apiKeyReadOnly: null,
             apiKeyReadWrite: null,

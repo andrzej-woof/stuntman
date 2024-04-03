@@ -3,7 +3,10 @@ import fs from 'fs';
 import { test, expect, jest, describe } from '@jest/globals';
 import { loadRules } from '../src/rules/loadRules';
 import { stuntmanConfig } from '@stuntman/shared';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const mockedRules = glob.globSync('*.[tj]s', { absolute: true, cwd: `${__dirname}/__rules` });
 
 describe('loadRules', () => {

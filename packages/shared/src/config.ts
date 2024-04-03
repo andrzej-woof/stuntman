@@ -47,4 +47,4 @@ const defaultConfig: Config = {
 };
 
 config.util.setModuleDefaults('stuntman', defaultConfig);
-export default config.get<Config>('stuntman');
+export default () => config.get<Config>('stuntman');
