@@ -7,7 +7,7 @@ import { logger, AppError, HttpCode, MAX_RULE_TTL_SECONDS, stringify, INDEX_DTS,
 import type * as Stuntman from '@stuntman/shared';
 import { RequestContext } from '../requestContext';
 import serializeJavascript from 'serialize-javascript';
-import LRUCache from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import { validateDeserializedRule } from './validators';
 import { deserializeRule, escapedSerialize, liveRuleToRule } from './utils';
 

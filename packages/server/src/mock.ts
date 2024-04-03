@@ -10,7 +10,7 @@ import { RawHeaders, logger, HttpCode, naiveGQLParser, escapeStringRegexp, error
 import { RequestContext } from './requestContext';
 import type * as Stuntman from '@stuntman/shared';
 import { IPUtils } from './ipUtils';
-import LRUCache from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import { API } from './api/api';
 
 // TODO add proper web proxy mode

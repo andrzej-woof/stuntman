@@ -1,4 +1,4 @@
-import glob from 'glob';
+import * as glob from 'glob';
 import fs from 'fs';
 import { test, expect, jest, describe } from '@jest/globals';
 import { loadRules } from '../src/rules/loadRules';

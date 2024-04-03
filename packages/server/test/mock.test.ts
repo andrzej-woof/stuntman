@@ -48,10 +48,13 @@ const getMockReq = (input?: MockRequest) => {
         values.path ??= url.pathname;
         values.protocol ??= url.protocol.replace(':', '');
         values.originalUrl ??= `${url.pathname}${input.url.indexOf('?') ? url.search : ''}`;
-        values.params ??= Array.from(url.searchParams.entries()).reduce((acc, [key, value]) => {
-            acc[key] = value;
-            return acc;
-        }, {} as Record<string, string>);
+        values.params ??= Array.from(url.searchParams.entries()).reduce(
+            (acc, [key, value]) => {
+                acc[key] = value;
+                return acc;
+            },
+            {} as Record<string, string>
+        );
         values.query = values.params;
     }
     if (input?.rawHeaders) {
