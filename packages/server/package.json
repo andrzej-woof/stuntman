@@ -12,7 +12,7 @@
         "url": "https://github.com/andrzej-woof/stuntman/issues"
     },
     "scripts": {
-        "test": "NODE_ENV=test LOG_LEVEL=silent SUPPRESS_NO_CONFIG_WARNING=1 jest --coverage",
+        "test": "NODE_ENV=test LOG_LEVEL=silent NODE_CONFIG_STRICT_MODE= SUPPRESS_NO_CONFIG_WARNING=1 jest --coverage",
         "clean": "rm -fr dist",
         "build": "tsc && cp -rv src/api/webgui dist/api",
         "lint": "prettier --check \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\"",
@@ -49,8 +49,8 @@
         "lru-cache": "10.2.0",
         "object-sizeof": "2.6.4",
         "pug": "3.0.2",
-        "ts-import": "4.0.0-beta.10",
         "serialize-javascript": "6.0.2",
+        "ts-import": "5.0.0-beta.0",
         "ts-jest": "^29.1.2",
         "undici": "6.11.1",
         "uuid": "9.0.1"

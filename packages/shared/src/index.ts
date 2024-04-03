@@ -10,7 +10,7 @@ export * from './errorToLog';
 import fs from 'fs';
 
 import config from './config';
-export const stuntmanConfig = config.stuntmanConfig;
+export const stuntmanConfig = config;
 
 // TODO this file read sucks
 export const INDEX_DTS = fs.readFileSync(`${__dirname}/index.d.ts`, 'utf-8');
