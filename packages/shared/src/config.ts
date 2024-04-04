@@ -9,7 +9,7 @@ import {
     DEFAULT_CACHE_MAX_SIZE,
     DEFAULT_CACHE_TTL,
 } from '.';
-import config from 'config';
+import nodeConfig from 'config';
 import path from 'path';
 
 // TODO safeguards & defaults
@@ -46,5 +46,5 @@ const defaultConfig: Config = {
     },
 };
 
-config.util.setModuleDefaults('stuntman', defaultConfig);
-export default () => config.get<Config>('stuntman');
+nodeConfig.util.setModuleDefaults('stuntman', defaultConfig);
+export default nodeConfig.get<Config>('stuntman');

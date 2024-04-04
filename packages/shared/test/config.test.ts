@@ -11,8 +11,12 @@ jest.mock('fs', () => ({
     }),
 }));
 
+test('INDEX_DTS', async () => {
+    expect(INDEX_DTS).toEqual('TYPE DEFINITIONS');
+});
+
 test('defaults', async () => {
-    expect(config()).toEqual({
+    expect(config).toEqual({
         api: {
             apiKeyReadOnly: null,
             apiKeyReadWrite: null,
@@ -43,8 +47,4 @@ test('defaults', async () => {
             disabled: false,
         },
     });
-});
-
-test('INDEX_DTS', async () => {
-    expect(INDEX_DTS).toEqual('TYPE DEFINITIONS');
 });
