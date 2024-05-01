@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/client",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "description": "Stuntman - HTTP proxy / mock API client",
     "main": "dist/index.js",
     "type": "module",
@@ -40,7 +40,7 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "dependencies": {
-        "@stuntman/shared": "workspace:^0.3.2",
+        "@stuntman/shared": "workspace:^0.3.3",
         "serialize-javascript": "6.0.2",
         "uuid": "9.0.1"
     },

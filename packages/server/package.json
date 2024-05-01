@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/server",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "description": "Stuntman - HTTP proxy / mock server with API",
     "main": "dist/index.js",
     "type": "module",
@@ -43,7 +43,7 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "dependencies": {
-        "@stuntman/shared": "workspace:^0.3.2",
+        "@stuntman/shared": "workspace:^0.3.3",
         "async-await-mutex-lock": "^1.0.11",
         "express": "5.0.0-beta.3",
         "glob": "10.3.12",
