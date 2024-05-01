@@ -70,7 +70,7 @@ describe('mock constructor', () => {
     });
 
     test('https', async () => {
-        new Mock({ ...stuntmanConfig, mock: { ...stuntmanConfig.mock, httpsPort: 80443, httpsCert: '123', httpsKey: '123' } });
+        new Mock({ ...stuntmanConfig, mock: { ...stuntmanConfig.mock, httpsPort: 8443, httpsCert: '123', httpsKey: '123' } });
     });
 
     test('no external dns', async () => {
@@ -107,7 +107,7 @@ describe('start', () => {
             mock: {
                 ...stuntmanConfig.mock,
                 port: 2018,
-                httpsPort: 80443,
+                httpsPort: 8443,
                 httpsCert:
                     '-----BEGIN CERTIFICATE-----\nMIIC7jCCAdYCCQDHj59tQDx5iTANBgkqhkiG9w0BAQsFADA5MREwDwYDVQQKDAhz\ndHVudG1hbjERMA8GA1UECwwIc3R1bnRtYW4xETAPBgNVBAMMCHN0dW50bWFuMB4X\nDTIzMDIxNjE1MzQzNFoXDTI0MDIxNjE1MzQzNFowOTERMA8GA1UECgwIc3R1bnRt\nYW4xETAPBgNVBAsMCHN0dW50bWFuMREwDwYDVQQDDAhzdHVudG1hbjCCASIwDQYJ\nKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK23MCp+grcLiyFzxvSU9iOFReIKZRVN\n0+DTlxl/sN4pvYlt7Hji7n/Yh55m7ACF1j8LRjaU6MOYIGofF4lbgA3nEbZVNJoH\nAtlSjk/JZc4LnDFinAWWxna2FpwrpfEnknIJ2B7fjtk5dM/WzSMn1MdPiC9V9Ee0\nPFe0PlpFl/hQSd4/VXfLxNy3bzW5AXa5CuTVRaEmts21TbL4VYe6KNPMkbTe+NJh\nwBrwVqS5lB3Z5racxOn5Dw5g5NuHgSA6LvUxdKhdkPs7y7e87XADadakibd9u02j\nimJwQih31O4rPJINLDYhVj5muyPGw9lpxEQ7UthxRxuzodm4F+5ZM1ECAwEAATAN\nBgkqhkiG9w0BAQsFAAOCAQEAhqISsPYrM+G37vw8I6YCWNSW0dJrpvfNpiz6oXal\nicIxOJz06qg0HsEXoWhdneo9PSA66KAmdcTplwPJtZ486izwD3F46+TZLkesOuCS\nDW9ihEPY5XPyjZDSz2J4EwBD4pH0AFeXSVFDIyXCSoWypSKjSq5lm7hOQuCOLkkm\ntlsptc4R3MGuvNYKSDBvxCjTy76jlXpMWINdVV18M4bVmRnVj+vYlQbYP5tCYGUm\nnzlFVi0dCLdvS2LGiKhARLQILP9YzC86a9UDPyWs703Zvqm5cnknCLEpjaR8dhd8\njAcDPHUe1RkR8wGrGwkkrIQfe8r8ovEylJgLT8HtNLqEXg==\n-----END CERTIFICATE-----\n',
                 httpsKey:
