@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/server",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "description": "Stuntman - HTTP proxy / mock server with API",
     "main": "dist/index.js",
     "type": "module",
@@ -15,7 +15,7 @@
     "scripts": {
         "test": "NODE_OPTIONS=--experimental-vm-modules NODE_ENV=test LOG_LEVEL=silent NODE_CONFIG_STRICT_MODE= SUPPRESS_NO_CONFIG_WARNING=1 jest --coverage",
         "clean": "rm -fr dist",
-        "build": "tsc && cp -rv src/api/webgui dist/api",
+        "build": "tsc && tsc-alias && cp -rv src/api/webgui dist/api",
         "lint": "prettier --check \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\"",
         "lint:fix": "prettier --write \"./{src,test}/**/*\" && eslint \"./{src,test}/**/*\" --fix",
         "start": "node ./dist/bin/stuntman.js",
@@ -43,7 +43,7 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "dependencies": {
-        "@stuntman/shared": "workspace:^0.3.1",
+        "@stuntman/shared": "workspace:^0.3.2",
         "async-await-mutex-lock": "^1.0.11",
         "express": "5.0.0-beta.3",
         "glob": "10.3.12",

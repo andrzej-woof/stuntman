@@ -26,5 +26,9 @@
         "strictNullChecks": true,
         "strictPropertyInitialization": true
     },
-    "exclude": ["jest.config.cjs", "./dist/**", "./test/**", "**/coverage"]
+    "exclude": ["jest.config.cjs", "./dist/**", "./test/**", "**/coverage"],
+    "tsc-alias": {
+      "resolveFullPaths": true,
+      "verbose": false
+    }
 }
