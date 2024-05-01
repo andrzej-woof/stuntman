@@ -3,6 +3,7 @@
     "version": "0.2.4",
     "description": "Stuntman - HTTP proxy / mock API client",
     "main": "dist/index.js",
+    "type": "module",
     "repository": {
         "type": "git",
         "url": "https://github.com/andrzej-woof/stuntman.git"

@@ -1,5 +1,5 @@
+import type { Config } from './index';
 import {
-    Config,
     DEFAULT_API_PORT,
     DEFAULT_MOCK_DOMAIN,
     EXTERNAL_DNS,
@@ -8,7 +8,7 @@ import {
     DEFAULT_CACHE_MAX_ENTRIES,
     DEFAULT_CACHE_MAX_SIZE,
     DEFAULT_CACHE_TTL,
-} from '.';
+} from './constants';
 import nodeConfig from 'config';
 import path from 'path';
 

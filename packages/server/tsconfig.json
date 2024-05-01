@@ -26,5 +26,5 @@
         "strictNullChecks": true,
         "strictPropertyInitialization": true
     },
-    "exclude": ["jest.config.js", "./dist/**", "./test/**", "**/coverage"]
+    "exclude": ["jest.config.cjs", "./dist/**", "./test/**", "**/coverage"]
 }

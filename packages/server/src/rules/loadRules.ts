@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { globSync } from 'glob';
-import tsImport from 'ts-import';
+import * as tsImport from 'ts-import';
 import { catchAllRule } from './catchAll';
 import { echoRule } from './echo';
 import { stuntmanConfig, logger, errorToLog } from '@stuntman/shared';

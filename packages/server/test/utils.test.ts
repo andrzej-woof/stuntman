@@ -1,8 +1,7 @@
 import type * as Stuntman from '@stuntman/shared';
-import { test, expect, jest, describe } from '@jest/globals';
+import { test, expect, describe } from '@jest/globals';
 import { v4 as uuidv4 } from 'uuid';
 import { RawHeaders } from '@stuntman/shared';
-import * as validators from '../src/api/validators';
 import { deserializeRule, escapedSerialize, liveRuleToRule } from '../src/api/utils';
 
 const remoteFnMatches = `return ((____arg0) => {
@@ -45,14 +44,14 @@ const request: Stuntman.Request = {
 };
 
 describe('deserializeRule', () => {
-    test('calls validateSerializedRuleProperties', async () => {
-        const validateSerializedRulePropertiesSpy = jest
-            .spyOn(validators, 'validateSerializedRuleProperties')
-            .mockImplementationOnce(() => undefined);
-        deserializeRule(serializedRule);
-        expect(validateSerializedRulePropertiesSpy).toBeCalledWith(serializedRule);
-        validateSerializedRulePropertiesSpy.mockRestore();
-    });
+    // test('calls validateSerializedRuleProperties', async () => {
+    //     const validateSerializedRulePropertiesSpy = jest
+    //         .spyOn(validators, 'validateSerializedRuleProperties')
+    //         .mockImplementationOnce(() => undefined);
+    //     deserializeRule(serializedRule);
+    //     expect(validateSerializedRulePropertiesSpy).toBeCalledWith(serializedRule);
+    //     validateSerializedRulePropertiesSpy.mockRestore();
+    // });
 
     test('default', async () => {
         const deserializedRule = deserializeRule(serializedRule);

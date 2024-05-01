@@ -3,6 +3,7 @@
     "version": "0.2.4",
     "description": "Stuntman - HTTP proxy / mock server with API",
     "main": "dist/index.js",
+    "type": "module",
     "repository": {
         "type": "git",
         "url": "https://github.com/andrzej-woof/stuntman.git"
@@ -43,8 +44,7 @@
     "license": "MIT",
     "dependencies": {
         "@stuntman/shared": "workspace:^0.2.4",
-        "await-lock": "2.2.2",
-        "express": "5.0.0-beta.1",
+        "express": "5.0.0-beta.3",
         "glob": "10.3.12",
         "lru-cache": "10.2.0",
         "object-sizeof": "2.6.4",
@@ -64,6 +64,7 @@
         "@types/jest": "^29.5.12",
         "@types/serialize-javascript": "5.0.4",
         "@types/uuid": "9.0.8",
+        "async-await-mutex-lock": "^1.0.11",
         "jest": "29.7.0",
         "prettier": "3.2.5",
         "typescript": "5.4.3"
@@ -79,8 +80,8 @@
         "CHANGELOG.md"
     ],
     "overrides": {
-      "ts-import": {
-        "typescript": "5.4.3"
-      }
+        "ts-import": {
+            "typescript": "5.4.3"
+        }
     }
 }

@@ -10,10 +10,14 @@ import serializeJavascript from 'serialize-javascript';
 import { LRUCache } from 'lru-cache';
 import { validateDeserializedRule } from './validators';
 import { deserializeRule, escapedSerialize, liveRuleToRule } from './utils';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 type ApiOptions = Stuntman.ApiConfig & {
     mockUuid: string;
 };
+
+const __dirname = dirname(fileURLToPath(import.meta.url)).replace(/\/src$/, '/dist');
 
 const API_KEY_HEADER = 'x-api-key';
 

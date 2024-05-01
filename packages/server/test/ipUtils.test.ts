@@ -14,7 +14,7 @@ test('resolveIPs', async () => {
     const ipUtils = new IPUtils({
         mockUuid: uuidv4(),
     });
-    expect(await ipUtils.resolveIP('www.example.com')).toEqual('93.184.216.34');
+    expect(await ipUtils.resolveIP('dns.google')).toMatch(/[48]\.[48]\.[48]\.[48]/);
     expect(ipUtils.isLocalhostIP(await ipUtils.resolveIP('localhost'))).toEqual(true);
     await expect(async () => await ipUtils.resolveIP('somehost.invalid')).rejects.toThrow();
 });
@@ -24,8 +24,8 @@ test('resolveIPs - useExternalDns', async () => {
         mockUuid: uuidv4(),
         externalDns: ['8.8.8.8'],
     });
-    expect(await ipUtils.resolveIP('www.example.com', { useExternalDns: true })).toEqual('93.184.216.34');
-    expect(await ipUtils.resolveIP('www.example.com', { useExternalDns: true })).toEqual('93.184.216.34');
+    expect(await ipUtils.resolveIP('dns.google', { useExternalDns: true })).toMatch(/[48]\.[48]\.[48]\.[48]/);
+    expect(await ipUtils.resolveIP('dns.google', { useExternalDns: true })).toMatch(/[48]\.[48]\.[48]\.[48]/);
     await expect(async () => await ipUtils.resolveIP('localhost', { useExternalDns: true })).rejects.toThrow();
     await expect(async () => await ipUtils.resolveIP('somehost.invalid', { useExternalDns: true })).rejects.toThrow();
 });
@@ -35,7 +35,7 @@ test('resolveIPs - external dns not set', async () => {
         mockUuid: uuidv4(),
         externalDns: [],
     });
-    await expect(async () => await ipUtils.resolveIP('www.example.com', { useExternalDns: true })).rejects.toThrow();
+    await expect(async () => await ipUtils.resolveIP('dns.google', { useExternalDns: true })).rejects.toThrow();
 });
 
 test('isIP', async () => {

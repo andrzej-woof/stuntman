@@ -4,6 +4,7 @@
     "description": "Stuntman - HTTP proxy / mock shared types and utils",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "type": "module",
     "repository": {
         "type": "git",
         "url": "https://github.com/andrzej-woof/stuntman.git"
