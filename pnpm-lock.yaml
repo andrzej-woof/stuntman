@@ -57,13 +57,13 @@ importers:
         specifier: ^1.43.1
         version: 1.43.1
       '@stuntman/client':
-        specifier: workspace:^0.3.0
+        specifier: workspace:^0.3.1
         version: link:../../packages/client
       '@stuntman/server':
-        specifier: workspace:^0.3.0
+        specifier: workspace:^0.3.1
         version: link:../../packages/server
       '@stuntman/shared':
-        specifier: workspace:^0.3.0
+        specifier: workspace:^0.3.1
         version: link:../../packages/shared
       express:
         specifier: 5.0.0-beta.3
@@ -100,7 +100,7 @@ importers:
   packages/client:
     dependencies:
       '@stuntman/shared':
-        specifier: workspace:^0.3.0
+        specifier: workspace:^0.3.1
         version: link:../shared
       serialize-javascript:
         specifier: 6.0.2
@@ -134,8 +134,11 @@ importers:
   packages/server:
     dependencies:
       '@stuntman/shared':
-        specifier: workspace:^0.3.0
+        specifier: workspace:^0.3.1
         version: link:../shared
+      async-await-mutex-lock:
+        specifier: ^1.0.11
+        version: 1.0.11
       express:
         specifier: 5.0.0-beta.3
         version: 5.0.0-beta.3
@@ -191,9 +194,6 @@ importers:
       '@types/uuid':
         specifier: 9.0.8
         version: 9.0.8
-      async-await-mutex-lock:
-        specifier: ^1.0.11
-        version: 1.0.11
       jest:
         specifier: 29.7.0
         version: 29.7.0(@types/node@20.12.7)(ts-node@10.9.2(@types/node@20.12.7)(typescript@5.4.3))
