@@ -8,7 +8,7 @@
 Example app for [Stunman](https://github.com/andrzej-woof/stuntman#readme)
 
 ```bash
-pnpm install --frozen-lockfile
+pnpm install
 pnpm build
 pnpm test:example
 ```

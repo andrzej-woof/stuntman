@@ -45,7 +45,12 @@ jobs:
                       ${{ runner.os }}-pnpm-store-
 
             - name: Install dependencies
-              run: pnpm install --frozen-lockfile --strict-peer-dependencies
+              run: pnpm install --strict-peer-dependencies
+
+            - name: Install playwright
+              run: |
+                cd apps/example
+                pnpm playwright install
 
             - name: Format & Lint
               run: pnpm lint
