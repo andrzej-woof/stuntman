@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import config from './config';
+import config from './stuntmanConfig';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 export * from './constants';

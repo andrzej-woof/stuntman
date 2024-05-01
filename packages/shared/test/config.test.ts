@@ -1,5 +1,5 @@
 import { expect, test } from '@jest/globals';
-import config from '../src/config';
+import config from '../src/stuntmanConfig';
 import { INDEX_DTS } from '../src/index';
 
 test('INDEX_DTS', async () => {

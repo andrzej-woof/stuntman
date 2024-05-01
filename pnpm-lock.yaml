@@ -60,13 +60,13 @@ importers:
         specifier: ^1.43.1
         version: 1.43.1
       '@stuntman/client':
-        specifier: workspace:^0.3.4
+        specifier: workspace:^0.3.5
         version: link:../../packages/client
       '@stuntman/server':
-        specifier: workspace:^0.3.4
+        specifier: workspace:^0.3.5
         version: link:../../packages/server
       '@stuntman/shared':
-        specifier: workspace:^0.3.4
+        specifier: workspace:^0.3.5
         version: link:../../packages/shared
       express:
         specifier: 5.0.0-beta.3
@@ -103,7 +103,7 @@ importers:
   packages/client:
     dependencies:
       '@stuntman/shared':
-        specifier: workspace:^0.3.4
+        specifier: workspace:^0.3.5
         version: link:../shared
       serialize-javascript:
         specifier: 6.0.2
@@ -137,7 +137,7 @@ importers:
   packages/server:
     dependencies:
       '@stuntman/shared':
-        specifier: workspace:^0.3.4
+        specifier: workspace:^0.3.5
         version: link:../shared
       async-await-mutex-lock:
         specifier: ^1.0.11
