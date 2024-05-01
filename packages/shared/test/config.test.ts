@@ -1,18 +1,13 @@
-import { expect, test, jest } from '@jest/globals';
+import { expect, test } from '@jest/globals';
 import config from '../src/config';
 import { INDEX_DTS } from '../src/index';
 
-jest.mock('fs', () => ({
-    readFileSync: jest.fn((fileName: string) => {
-        if (/index\.d\.ts$/.test(fileName)) {
-            return 'TYPE DEFINITIONS';
-        }
-        return '{}';
-    }),
-}));
+test('INDEX_DTS', async () => {
+    expect(INDEX_DTS).toMatch(/export type Rule/);
+});
 
 test('defaults', async () => {
-    expect(config.stuntmanConfig).toEqual({
+    expect(config).toEqual({
         api: {
             apiKeyReadOnly: null,
             apiKeyReadWrite: null,
@@ -43,8 +38,4 @@ test('defaults', async () => {
             disabled: false,
         },
     });
-});
-
-test('INDEX_DTS', async () => {
-    expect(INDEX_DTS).toEqual('TYPE DEFINITIONS');
 });

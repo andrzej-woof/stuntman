@@ -1,5 +1,5 @@
+import type { Config } from './index';
 import {
-    Config,
     DEFAULT_API_PORT,
     DEFAULT_MOCK_DOMAIN,
     EXTERNAL_DNS,
@@ -8,8 +8,8 @@ import {
     DEFAULT_CACHE_MAX_ENTRIES,
     DEFAULT_CACHE_MAX_SIZE,
     DEFAULT_CACHE_TTL,
-} from '.';
-import config from 'config';
+} from './constants';
+import nodeConfig from 'config';
 import path from 'path';
 
 // TODO safeguards & defaults
@@ -46,20 +46,5 @@ const defaultConfig: Config = {
     },
 };
 
-let configFromFile: Config | null = null;
-
-class ConfigWrapper {
-    get stuntmanConfig(): Config {
-        if (!configFromFile) {
-            config.util.setModuleDefaults('stuntman', defaultConfig);
-            configFromFile = config.get<Config>('stuntman');
-        }
-        if (!configFromFile) {
-            throw new Error('error getting config');
-        }
-        return configFromFile;
-    }
-}
-const configWrapper = new ConfigWrapper();
-
-export = configWrapper;
+nodeConfig.util.setModuleDefaults('stuntman', defaultConfig);
+export default nodeConfig.get<Config>('stuntman');

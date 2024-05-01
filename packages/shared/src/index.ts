@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import config from './config';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 export * from './constants';
 export * from './appError';
 export * from './logger';
@@ -9,9 +12,9 @@ export * from './escapeStringRegexp';
 export * from './errorToLog';
 import fs from 'fs';
 
-import config from './config';
-export const stuntmanConfig = config.stuntmanConfig;
+export const stuntmanConfig = config;
 
+const __dirname = dirname(fileURLToPath(import.meta.url)).replace(/\/src$/, '/dist');
 // TODO this file read sucks
 export const INDEX_DTS = fs.readFileSync(`${__dirname}/index.d.ts`, 'utf-8');
 

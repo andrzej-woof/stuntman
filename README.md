@@ -26,7 +26,7 @@ In order to get more familiar with the concept and how to use it please refer to
 
 ```bash
 nvm use
-pnpm install --frozen-lockfile
+pnpm install
 pnpm build
 ```
 

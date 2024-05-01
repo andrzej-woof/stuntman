@@ -9,6 +9,10 @@ import dns, { LookupAddress } from 'node:dns';
 import nodeFetch from 'node-fetch';
 import http from 'http';
 import https from 'https';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // TODO collect mock server coverage
 

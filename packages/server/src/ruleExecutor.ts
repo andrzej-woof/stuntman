@@ -1,4 +1,4 @@
-import AwaitLock from 'await-lock';
+import { Lock } from 'async-await-mutex-lock';
 import { AppError, DEFAULT_RULE_PRIORITY, HttpCode, errorToLog, logger } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
 import { CUSTOM_RULES, DEFAULT_RULES } from './rules';
@@ -17,7 +17,7 @@ const transformMockRuleToLive = (rule: Stuntman.Rule): Stuntman.LiveRule => {
 class RuleExecutor implements Stuntman.RuleExecutorInterface {
     // TODO persistent rule storage maybe
     private _rules: Stuntman.LiveRule[];
-    private rulesLock = new AwaitLock();
+    private rulesLock = new Lock();
 
     private get enabledRules(): readonly Stuntman.LiveRule[] {
         if (!this._rules) {
@@ -42,7 +42,7 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
         if (!this.hasExpired()) {
             return;
         }
-        await this.rulesLock.acquireAsync();
+        await this.rulesLock.acquire();
         const now = Date.now();
         try {
             this._rules = this._rules.filter((r) => {
@@ -59,7 +59,7 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
 
     async addRule(rule: Stuntman.Rule, overwrite?: boolean): Promise<Stuntman.LiveRule> {
         await this.cleanUpExpired();
-        await this.rulesLock.acquireAsync();
+        await this.rulesLock.acquire();
         try {
             if (this._rules.some((r) => r.id === rule.id)) {
                 if (!overwrite) {
@@ -90,7 +90,7 @@ class RuleExecutor implements Stuntman.RuleExecutorInterface {
     async removeRule(rule: Stuntman.Rule): Promise<void>;
     async removeRule(ruleOrId: string | Stuntman.Rule): Promise<void> {
         await this.cleanUpExpired();
-        await this.rulesLock.acquireAsync();
+        await this.rulesLock.acquire();
         try {
             this._removeRule(ruleOrId);
         } finally {

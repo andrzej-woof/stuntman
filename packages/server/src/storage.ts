@@ -1,8 +1,8 @@
-import LRUCache from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import type * as Stuntman from '@stuntman/shared';
 import sizeof from 'object-sizeof';
 
-const DNS_CACHE_OPTIONS: LRUCache.Options<string, string> = {
+const DNS_CACHE_OPTIONS: any = {
     max: 1000,
     ttl: 1000 * 60 * 15,
     allowStale: false,

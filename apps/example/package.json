@@ -1,9 +1,10 @@
 {
     "name": "@stuntman/example",
     "private": "true",
-    "version": "0.2.4",
+    "version": "0.3.0",
     "description": "Stuntman - HTTP proxy / mock shared types and utils",
     "main": "dist/index.js",
+    "type": "module",
     "repository": {
         "type": "git",
         "url": "https://github.com/andrzej-woof/stuntman.git"
@@ -13,7 +14,7 @@
         "url": "https://github.com/andrzej-woof/stuntman/issues"
     },
     "scripts": {
-        "test:example": "testcafe chrome:headless **/*.testcafe.ts --app 'ts-node ./src/index.ts' --app-init-delay 10000 --retry-test-pages --hostname localhost",
+        "test:example": "pnpm exec playwright test --project=chromium",
         "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' ./src/index.ts",
         "clean": "rm -fr dist",
         "build": "echo \"Skipping exampleApp build\"",
@@ -41,20 +42,21 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "dependencies": {
-        "@stuntman/client": "workspace:^0.2.4",
-        "@stuntman/server": "workspace:^0.2.4",
-        "@stuntman/shared": "workspace:^0.2.4",
-        "express": "5.0.0-beta.1",
-        "express-session": "1.17.3",
+        "@playwright/test": "^1.43.1",
+        "@stuntman/client": "workspace:^0.3.0",
+        "@stuntman/server": "workspace:^0.3.0",
+        "@stuntman/shared": "workspace:^0.3.0",
+        "express": "5.0.0-beta.3",
+        "express-session": "1.18.0",
         "node-fetch": "2.6.9",
         "pug": "3.0.2",
-        "testcafe": "2.3.1",
-        "uuid": "9.0.0"
+        "uuid": "9.0.1"
     },
     "devDependencies": {
-        "@types/express": "4.17.17",
-        "@types/express-session": "1.17.6",
-        "@types/node-fetch": "2.6.2",
-        "@types/uuid": "9.0.1"
+        "@types/express": "4.17.21",
+        "@types/express-session": "1.18.0",
+        "@types/node-fetch": "2.6.11",
+        "@types/uuid": "9.0.8",
+        "tsx": "^4.8.2"
     }
 }
