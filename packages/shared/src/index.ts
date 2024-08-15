@@ -131,9 +131,9 @@ export type LogEntry = {
 };
 
 export type RuleMatchFunction = (request: Request) => RuleMatchResult;
-export type RequestManipulationFn = (request: Request) => Request;
-export type ResponseManipulationFn = (request: Request, response: Response) => Response;
-export type ResponseGenerationFn = (request: Request) => Response;
+export type RequestManipulationFn = (request: Request) => Request | Promise<Request>;
+export type ResponseManipulationFn = (request: Request, response: Response) => Response | Promise<Response>;
+export type ResponseGenerationFn = (request: Request) => Response | Promise<Response>;
 
 export type Actions =
     | {
