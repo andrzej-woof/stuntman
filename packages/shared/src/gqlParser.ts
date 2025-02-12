@@ -7,8 +7,8 @@ export const naiveGQLParser = (body: Buffer | string): Stuntman.GQLRequestBody |
         let json: Stuntman.GQLRequestBody | undefined = undefined;
         try {
             json = JSON.parse(Buffer.isBuffer(body) ? body.toString('utf-8') : body);
-        } catch (kiss) {
-            // and swallow
+        } catch {
+            // ignore
         }
         if (!json?.query && !json?.operationName) {
             return undefined;

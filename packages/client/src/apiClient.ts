@@ -122,8 +122,8 @@ export class Client {
                 let json: any;
                 try {
                     json = JSON.parse(text);
-                } catch (kiss) {
-                    // and swallow
+                } catch {
+                    // ignore
                 }
                 if (json && 'error' in json) {
                     throw new ClientError(json.error);

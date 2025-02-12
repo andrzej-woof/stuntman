@@ -5,7 +5,7 @@ import { ruleBuilder } from '../src/ruleBuilder';
 import serializeJavascript from 'serialize-javascript';
 
 const callRemotableFunction = (
-    // eslint-disable-next-line @typescript-eslint/ban-types
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     fn: Stuntman.RemotableFunction<Function>,
     request: Stuntman.Request,
     response?: Stuntman.Response,

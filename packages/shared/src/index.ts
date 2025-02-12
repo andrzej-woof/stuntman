@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import config from './stuntmanConfig';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';

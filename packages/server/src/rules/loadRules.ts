@@ -31,7 +31,7 @@ export const loadRules = async (): Promise<Stuntman.DeployedRule[]> => {
         // TODO add .ts rule support
         try {
             const loadedFile = await tsImport.load(filePath, { useCache: false });
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
+
             const exportedRules = (Object.values(loadedFile) as Stuntman.DeployedRule[]).filter((rule) => {
                 if (!rule || !rule.id || typeof rule.matches !== 'function') {
                     logger.error({ filePath, rule }, 'invalid exported rule');

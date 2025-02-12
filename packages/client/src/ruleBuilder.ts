@@ -238,7 +238,7 @@ function matchFunction(req: Stuntman.Request): Stuntman.RuleMatchResult {
         let json: any;
         try {
             json = JSON.parse(req.body);
-        } catch (kiss) {
+        } catch {
             return { result: false, description: `unparseable json` };
         }
         if (!json) {

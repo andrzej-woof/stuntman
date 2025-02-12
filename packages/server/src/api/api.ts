@@ -153,7 +153,9 @@ export class API {
             this.initWebGui();
         }
 
-        this.apiApp.all(/.*/, (_req: Request, res: Response) => res.status(404).send());
+        this.apiApp.all(/.*/, (_req: Request, res: Response) => {
+            res.status(404).send();
+        });
 
         this.apiApp.use((error: Error | AppError, req: Request, res: Response) => {
             const ctx: RequestContext | null = RequestContext.get(req);

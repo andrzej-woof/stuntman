@@ -101,7 +101,7 @@ export class Mock {
                     .join('')
             );
             return JSON.parse(jsonPayload);
-        } catch (error) {
+        } catch {
             // TODO
         }
         return undefined;
