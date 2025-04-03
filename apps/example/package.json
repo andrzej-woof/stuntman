@@ -42,21 +42,21 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "dependencies": {
-        "@playwright/test": "^1.50.1",
+        "@playwright/test": "^1.51.1",
         "@stuntman/client": "workspace:^0.3.7",
         "@stuntman/server": "workspace:^0.3.7",
         "@stuntman/shared": "workspace:^0.3.7",
-        "express": "5.0.0-beta.3",
+        "express": "5.1.0",
         "express-session": "1.18.1",
         "node-fetch": "3.3.2",
         "pug": "3.0.3",
-        "uuid": "11.0.5"
+        "uuid": "11.1.0"
     },
     "devDependencies": {
-        "@types/express": "5.0.0",
+        "@types/express": "5.0.1",
         "@types/express-session": "1.18.1",
         "@types/node-fetch": "2.6.12",
         "@types/uuid": "10.0.0",
-        "tsx": "^4.19.2"
+        "tsx": "^4.19.3"
     }
 }
