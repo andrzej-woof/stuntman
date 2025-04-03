@@ -1,7 +1,7 @@
 {
     "name": "@stuntman/example",
     "private": "true",
-    "version": "0.3.7",
+    "version": "1.0.0",
     "description": "Stuntman - HTTP proxy / mock shared types and utils",
     "main": "dist/index.js",
     "type": "module",
@@ -43,9 +43,9 @@
     "license": "MIT",
     "dependencies": {
         "@playwright/test": "^1.51.1",
-        "@stuntman/client": "workspace:^0.3.7",
-        "@stuntman/server": "workspace:^0.3.7",
-        "@stuntman/shared": "workspace:^0.3.7",
+        "@stuntman/client": "workspace:^1.0.0",
+        "@stuntman/server": "workspace:^1.0.0",
+        "@stuntman/shared": "workspace:^1.0.0",
         "express": "5.1.0",
         "express-session": "1.18.1",
         "node-fetch": "3.3.2",
