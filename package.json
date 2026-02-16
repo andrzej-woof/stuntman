@@ -2,6 +2,7 @@
     "name": "@stuntman/stuntman",
     "version": "1.0.1",
     "description": "Stuntman - HTTP proxy / mock with API and client libraries",
+    "private": true,
     "main": "index.js",
     "repository": {
         "type": "git",
