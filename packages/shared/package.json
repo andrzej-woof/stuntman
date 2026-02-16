@@ -41,8 +41,8 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "dependencies": {
-        "config": "3.3.12",
-        "pino": "9.6.0",
+        "config": "4.3.0",
+        "pino": "10.3.1",
         "ts-jest": "^29.4.6"
     },
     "devDependencies": {
