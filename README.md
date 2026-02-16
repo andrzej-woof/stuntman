@@ -15,8 +15,6 @@ It offers API and client library that can be used for example within E2E functio
 
 In order to get more familiar with the concept and how to use it please refer to [example app](https://github.com/andrzej-woof/stuntman/tree/master/apps/example#readme)
 
-> **_NOTE:_** This project is at a very early stage of developement and as such may often contain breaking changes in upcoming releases before reaching stable version 1.0.0
-
 ## Building from source
 
 ### Prerequisites

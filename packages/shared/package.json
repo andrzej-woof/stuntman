@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/shared",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Stuntman - HTTP proxy / mock shared types and utils",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
