@@ -41,8 +41,8 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "devDependencies": {
-        "@eslint/eslintrc": "^3.3.1",
-        "@eslint/js": "^9.23.0",
+        "@eslint/eslintrc": "^3.3.3",
+        "@eslint/js": "^9.39.2",
         "@prettier/plugin-pug": "3.3.0",
         "@types/node": "22.14.0",
         "@typescript-eslint/eslint-plugin": "8.29.0",
@@ -56,8 +56,8 @@
         "nodemon": "3.1.9",
         "prettier": "3.5.3",
         "ts-node": "10.9.2",
-        "tsc-alias": "^1.8.13",
-        "typescript": "^5.8.2"
+        "tsc-alias": "^1.8.16",
+        "typescript": "^5.9.3"
     },
     "files": [
         "README.md",

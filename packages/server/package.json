@@ -52,7 +52,7 @@
         "pug": "3.0.3",
         "serialize-javascript": "6.0.2",
         "ts-import": "5.0.0-beta.1",
-        "ts-jest": "^29.3.1",
+        "ts-jest": "^29.4.6",
         "undici": "7.7.0",
         "uuid": "11.1.0"
     },

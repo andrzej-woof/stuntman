@@ -42,7 +42,7 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "dependencies": {
-        "@playwright/test": "^1.51.1",
+        "@playwright/test": "^1.58.2",
         "@stuntman/client": "workspace:^1.0.0",
         "@stuntman/server": "workspace:^1.0.0",
         "@stuntman/shared": "workspace:^1.0.0",
@@ -57,6 +57,6 @@
         "@types/express-session": "1.18.1",
         "@types/node-fetch": "2.6.12",
         "@types/uuid": "10.0.0",
-        "tsx": "^4.19.3"
+        "tsx": "^4.21.0"
     }
 }

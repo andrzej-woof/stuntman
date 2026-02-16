@@ -17,7 +17,7 @@ const getFunctionParams = (func: () => any) => {
     return params;
 };
 
-const serializeApiFunction = (fn: (...args: any[]) => any, variables?: Stuntman.LocalVariables): string => {
+export const serializeApiFunction = (fn: (...args: any[]) => any, variables?: Stuntman.LocalVariables): string => {
     const variableInitializer: string[] = [];
     const functionParams = getFunctionParams(fn);
     if (variables) {
@@ -53,7 +53,7 @@ const serializeApiFunction = (fn: (...args: any[]) => any, variables?: Stuntman.
 const keysOf = <T extends object>(obj: T): Array<keyof T> => {
     return Array.from(Object.keys(obj)) as any;
 };
-const serializeRemotableFunctions = <T>(obj: any): Stuntman.WithSerializedFunctions<T> => {
+export const serializeRemotableFunctions = <T>(obj: any): Stuntman.WithSerializedFunctions<T> => {
     const objectKeys = keysOf(obj);
     if (!objectKeys || objectKeys.length === 0) {
         return obj;
