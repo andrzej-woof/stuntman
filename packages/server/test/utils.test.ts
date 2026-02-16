@@ -1,7 +1,7 @@
+import { describe, expect, test } from '@jest/globals';
 import type * as Stuntman from '@stuntman/shared';
-import { test, expect, describe } from '@jest/globals';
-import { v4 as uuidv4 } from 'uuid';
 import { RawHeaders } from '@stuntman/shared';
+import { v4 as uuidv4 } from 'uuid';
 import { deserializeRule, escapedSerialize, liveRuleToRule } from '../src/api/utils';
 
 const remoteFnMatches = `return ((____arg0) => {
@@ -49,7 +49,7 @@ describe('deserializeRule', () => {
     //         .spyOn(validators, 'validateSerializedRuleProperties')
     //         .mockImplementationOnce(() => undefined);
     //     deserializeRule(serializedRule);
-    //     expect(validateSerializedRulePropertiesSpy).toBeCalledWith(serializedRule);
+    //     expect(validateSerializedRulePropertiesSpy).toHaveBeenCalledWith(serializedRule);
     //     validateSerializedRulePropertiesSpy.mockRestore();
     // });
 

@@ -1,9 +1,8 @@
+import { describe, expect, jest, test } from '@jest/globals';
 import type * as Stuntman from '@stuntman/shared';
-import { expect, test, jest } from '@jest/globals';
+import { DEFAULT_RULE_PRIORITY, RawHeaders } from '@stuntman/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { getRuleExecutor } from '../src/ruleExecutor';
-import { DEFAULT_RULE_PRIORITY, RawHeaders } from '@stuntman/shared';
-import { describe } from 'node:test';
 
 const makeRule = (rule?: Partial<Stuntman.Rule>): Stuntman.Rule => {
     return {

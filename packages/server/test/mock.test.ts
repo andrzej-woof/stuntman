@@ -1,14 +1,15 @@
-import type * as Stuntman from '@stuntman/shared';
-import { v4 as uuidv4 } from 'uuid';
 import { getMockReq as _getMockReq, getMockRes } from '@jest-mock/express';
-import { test, expect, describe, jest } from '@jest/globals';
-import { Mock } from '../src/mock';
-import { stuntmanConfig } from '@stuntman/shared';
-import { RawHeaders } from '@stuntman/shared';
 import { MockRequest } from '@jest-mock/express/dist/src/request';
+import { describe, expect, jest, test } from '@jest/globals';
+import type * as Stuntman from '@stuntman/shared';
+import { RawHeaders, stuntmanConfig } from '@stuntman/shared';
 import express from 'express';
 import https from 'https';
+import { v4 as uuidv4 } from 'uuid';
+import { Mock } from '../src/mock';
 import { RequestContext } from '../src/requestContext';
+
+jest.useFakeTimers();
 
 jest.mock('express', () => () => ({
     use: jest.fn(),
@@ -95,8 +96,8 @@ describe('start', () => {
         const mock = new Mock({ ...stuntmanConfig, api: { disabled: true }, mock: { ...noHttpsConfig, port: 2017 } });
         mock.start();
         setTimeout(() => {
-            expect(mock['mockApp']?.listen).toBeCalled();
-            expect(https.createServer).not.toBeCalled();
+            expect(mock['mockApp']?.listen).toHaveBeenCalled();
+            expect(https.createServer).not.toHaveBeenCalled();
             expect(() => mock.start()).toThrow();
         }, 5000);
     });
@@ -117,8 +118,8 @@ describe('start', () => {
         });
         mock.start();
         setTimeout(() => {
-            expect(mock['mockApp']?.listen).toBeCalled();
-            expect(https.createServer).toBeCalled();
+            expect(mock['mockApp']?.listen).toHaveBeenCalled();
+            expect(https.createServer).toHaveBeenCalled();
         }, 5000);
     });
 });
@@ -139,18 +140,19 @@ test('bindRequestContext', async () => {
             uuid: expect.stringMatching(/^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$/i),
         })
     );
-    expect(nextFunction).toBeCalled();
+    expect(nextFunction).toHaveBeenCalled();
 });
 
 test('errorHandler', async () => {
     const mock = new Mock(stuntmanConfig);
     const json = jest.fn();
-    const res = { status: jest.fn(() => ({ json })) };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const res = { status: jest.fn((_status: number) => ({ json })) };
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     mock['errorHandler'](new Error('my error'), {}, res);
-    expect(res.status).toBeCalledWith(500);
-    expect(json).toBeCalledWith({
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(json).toHaveBeenCalledWith({
         error: {
             message: 'my error',
             httpCode: 500,
@@ -369,7 +371,7 @@ describe('stop', () => {
         const serverClose = jest.fn((cb: any) => cb());
         Reflect.set(mock, 'server', { close: serverClose });
         await mock.stop();
-        expect(serverClose).toBeCalled();
+        expect(serverClose).toHaveBeenCalled();
     });
 
     test('http & https', async () => {
@@ -379,8 +381,8 @@ describe('stop', () => {
         Reflect.set(mock, 'server', { close: serverClose });
         Reflect.set(mock, 'serverHttps', { close: serverHttpsClose });
         await mock.stop();
-        expect(serverClose).toBeCalled();
-        expect(serverHttpsClose).toBeCalled();
+        expect(serverClose).toHaveBeenCalled();
+        expect(serverHttpsClose).toHaveBeenCalled();
     });
 });
 
