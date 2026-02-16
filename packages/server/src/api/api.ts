@@ -1,17 +1,17 @@
-import http from 'http';
-import express, { NextFunction, Request, Response, Express as ExpressServer } from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import { getTrafficStore } from '../storage';
-import { getRuleExecutor } from '../ruleExecutor';
-import { logger, AppError, HttpCode, MAX_RULE_TTL_SECONDS, stringify, INDEX_DTS, errorToLog } from '@stuntman/shared';
 import type * as Stuntman from '@stuntman/shared';
-import { RequestContext } from '../requestContext';
-import serializeJavascript from 'serialize-javascript';
+import { AppError, HttpCode, INDEX_DTS, MAX_RULE_TTL_SECONDS, errorToLog, logger, stringify } from '@stuntman/shared';
+import express, { Express as ExpressServer, NextFunction, Request, Response } from 'express';
+import http from 'http';
 import { LRUCache } from 'lru-cache';
-import { validateDeserializedRule } from './validators';
-import { deserializeRule, escapedSerialize, liveRuleToRule } from './utils';
 import { dirname } from 'path';
+import serializeJavascript from 'serialize-javascript';
 import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
+import { RequestContext } from '../requestContext';
+import { getRuleExecutor } from '../ruleExecutor';
+import { getTrafficStore } from '../storage';
+import { deserializeRule, escapedSerialize, liveRuleToRule } from './utils';
+import { validateDeserializedRule } from './validators';
 
 type ApiOptions = Stuntman.ApiConfig & {
     mockUuid: string;
@@ -86,14 +86,14 @@ export class API {
             if (!req.params.ruleId) {
                 throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
             }
-            res.send(stringify(await getRuleExecutor(this.options.mockUuid).getRule(req.params.ruleId)));
+            res.send(stringify(await getRuleExecutor(this.options.mockUuid).getRule(req.params.ruleId as string)));
         });
 
         this.apiApp.get('/rule/:ruleId/disable', this.authReadWrite, (req, res) => {
             if (!req.params.ruleId) {
                 throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
             }
-            getRuleExecutor(this.options.mockUuid).disableRule(req.params.ruleId);
+            getRuleExecutor(this.options.mockUuid).disableRule(req.params.ruleId as string);
             res.send();
         });
 
@@ -101,7 +101,7 @@ export class API {
             if (!req.params.ruleId) {
                 throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
             }
-            getRuleExecutor(this.options.mockUuid).enableRule(req.params.ruleId);
+            getRuleExecutor(this.options.mockUuid).enableRule(req.params.ruleId as string);
             res.send();
         });
 
@@ -122,7 +122,7 @@ export class API {
             if (!req.params.ruleId) {
                 throw new AppError({ httpCode: HttpCode.BAD_REQUEST, message: 'missing ruleId' });
             }
-            await getRuleExecutor(this.options.mockUuid).removeRule(req.params.ruleId);
+            await getRuleExecutor(this.options.mockUuid).removeRule(req.params.ruleId as string);
             res.send();
         });
 
@@ -140,7 +140,10 @@ export class API {
             }
             const serializedTraffic: Stuntman.LogEntry[] = [];
             for (const value of this.trafficStore.values()) {
-                if (value.mockRuleId === req.params.ruleIdOrLabel || (value.labels || []).includes(req.params.ruleIdOrLabel)) {
+                if (
+                    value.mockRuleId === req.params.ruleIdOrLabel ||
+                    (value.labels || []).includes(req.params.ruleIdOrLabel as string)
+                ) {
                     serializedTraffic.push(value);
                 }
             }

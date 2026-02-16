@@ -1,6 +1,6 @@
 {
     "name": "@stuntman/server",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Stuntman - HTTP proxy / mock server with API",
     "main": "dist/index.js",
     "type": "module",
@@ -43,31 +43,31 @@
     "author": "Andrzej Pasterczyk",
     "license": "MIT",
     "dependencies": {
-        "@stuntman/shared": "workspace:^1.0.1",
+        "@stuntman/shared": "workspace:^1.0.2",
         "async-await-mutex-lock": "^1.0.12",
-        "express": "5.1.0",
+        "express": "5.2.1",
         "glob": "11.0.1",
-        "lru-cache": "11.1.0",
+        "lru-cache": "11.2.6",
         "object-sizeof": "2.6.5",
         "pug": "3.0.3",
         "serialize-javascript": "6.0.2",
         "ts-import": "5.0.0-beta.1",
         "ts-jest": "^29.4.6",
-        "undici": "7.7.0",
+        "undici": "7.22.0",
         "uuid": "11.1.0"
     },
     "devDependencies": {
         "@jest-mock/express": "^3.0.0",
         "@jest/globals": "29.7.0",
-        "@prettier/plugin-pug": "3.3.0",
-        "@types/express": "5.0.1",
+        "@prettier/plugin-pug": "3.4.2",
+        "@types/express": "5.0.6",
         "@types/glob": "8.1.0",
         "@types/jest": "^29.5.14",
         "@types/serialize-javascript": "5.0.4",
         "@types/uuid": "10.0.0",
         "jest": "29.7.0",
-        "prettier": "3.5.3",
-        "typescript": "5.8.2"
+        "prettier": "3.8.1",
+        "typescript": "5.9.3"
     },
     "bin": {
         "stuntman": "./dist/bin/stuntman.js"
